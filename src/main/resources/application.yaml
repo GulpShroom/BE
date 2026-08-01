@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: glupshroom
+  config:
+    import: optional:application-secret.yaml
+  datasource:
+    url: jdbc:postgresql://localhost:5433/glupshroom
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+
+logging:
+  level:
+    org.hibernate.SQL: debug
