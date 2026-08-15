@@ -2,11 +2,15 @@ package com.hufsglobalion.glupshroom.domain.journey.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,6 +21,7 @@ import lombok.NoArgsConstructor;
 public class Journey {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "journey_id")
     private Long id;
 
@@ -94,4 +99,41 @@ public class Journey {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Builder
+    public Journey(Long authorId, Long productId, String photoUrl, String country, String city,
+                   Integer journeyYear, Integer journeyMonth, String season,
+                   String activityTag, String activitySource,
+                   String situationTag, String situationSource,
+                   String styleTag, String styleSource,
+                   String recallText, String recallTone, String userMemo,
+                   String verifyStatus, Integer verifyConfidence,
+                   Integer generation, boolean firstJourney) {
+        this.authorId = authorId;
+        this.productId = productId;
+        this.photoUrl = photoUrl;
+        this.country = country;
+        this.city = city;
+        this.journeyYear = journeyYear;
+        this.journeyMonth = journeyMonth;
+        this.season = season;
+        this.activityTag = activityTag;
+        this.activitySource = activitySource;
+        this.situationTag = situationTag;
+        this.situationSource = situationSource;
+        this.styleTag = styleTag;
+        this.styleSource = styleSource;
+        this.recallText = recallText;
+        this.recallTone = recallTone;
+        this.userMemo = userMemo;
+        this.verifyStatus = verifyStatus;
+        this.verifyConfidence = verifyConfidence;
+        this.generation = generation;
+        this.firstJourney = firstJourney;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
 }
