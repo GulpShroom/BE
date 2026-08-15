@@ -1,4 +1,4 @@
-package com.hufsglobalion.glupshroom.domain.journey;
+package com.hufsglobalion.glupshroom.domain.journey.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,6 +33,8 @@ public class Journey {
 
     private Integer journeyMonth;
 
+    private String season;
+
     private String activityTag;
     private String activityTagSource;
 
@@ -50,10 +52,10 @@ public class Journey {
     @Lob
     private String userMemo;
 
-    private String verifyStatus;      // TODO: EXIF 검증 붙이기 전까진 기본값(PENDING 등)
-    private Double verifyConfidence;  // TODO: 위와 동일
+    private String verifyStatus;
+    private Double verifyConfidence;
 
-    private Integer generation;       // TODO: Product의 current_generation 연동 필요
+    private Integer generation;
     private boolean isFirstJourney;
 
     @Column(nullable = false, updatable = false)
@@ -61,7 +63,7 @@ public class Journey {
 
     @Builder
     public Journey(Long userId, Long productId, String photoUrl, String country, String city,
-                   Integer journeyYear, Integer journeyMonth,
+                   Integer journeyYear, Integer journeyMonth, String season,
                    String activityTag, String activityTagSource,
                    String situationTag, String situationTagSource,
                    String styleTag, String styleTagSource,
@@ -75,6 +77,7 @@ public class Journey {
         this.city = city;
         this.journeyYear = journeyYear;
         this.journeyMonth = journeyMonth;
+        this.season = season;
         this.activityTag = activityTag;
         this.activityTagSource = activityTagSource;
         this.situationTag = situationTag;
