@@ -38,23 +38,17 @@ public class ProductService {
     private final TransferService transferService;
 
     public MyProductListResponse getMyProductList(Long userId, String statusValue) {
-        try {
-            ProductListStatus status = ProductListStatus.from(statusValue)
-                    .orElseThrow(() -> new CustomException(ErrorCode.INVALID_PRODUCT_LIST_STATUS));
+        ProductListStatus status = ProductListStatus.from(statusValue)
+                .orElseThrow(() -> new CustomException(ErrorCode.INVALID_PRODUCT_LIST_STATUS));
 
-            userService.getUser(userId);
+        userService.getUser(userId);
 
-            List<ProductItem> products = findOwnershipHistories(userId, status).stream()
-                    .map(ownershipHistory -> toProductItem(userId, ownershipHistory))
-                    .sorted(Comparator.comparing(ProductItem::registeredAt).reversed())
-                    .toList();
+        List<ProductItem> products = findOwnershipHistories(userId, status).stream()
+                .map(ownershipHistory -> toProductItem(userId, ownershipHistory))
+                .sorted(Comparator.comparing(ProductItem::registeredAt).reversed())
+                .toList();
 
-            return new MyProductListResponse(userId, status.getValue(), products);
-        } catch (CustomException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CustomException(ErrorCode.PRODUCT_LIST_RETRIEVAL_FAILED);
-        }
+        return new MyProductListResponse(userId, status.getValue(), products);
     }
 
     private List<OwnershipHistory> findOwnershipHistories(Long userId, ProductListStatus status) {
@@ -67,7 +61,9 @@ public class ProductService {
 
     private ProductItem toProductItem(Long userId, OwnershipHistory ownershipHistory) {
         Product product = productRepository.findById(ownershipHistory.getProductId())
-                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_LIST_RETRIEVAL_FAILED));
+                .orElseThrow(() -> new IllegalStateException(
+                        "소유 이력에 연결된 제품을 찾을 수 없습니다. productId=" + ownershipHistory.getProductId()
+                ));
 
         InheritanceLetterPreview inheritanceLetter = transferService
                 .findLatestOpenedLetter(product.getId(), userId)
