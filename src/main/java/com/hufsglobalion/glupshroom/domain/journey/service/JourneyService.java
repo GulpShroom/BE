@@ -18,7 +18,6 @@ public class JourneyService {
     private final PhotoMetadataExtractor photoMetadataExtractor;
 
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
-        // 사진 다운로드 + EXIF/역지오코딩(느린 외부 I/O)은 트랜잭션 시작 전에 끝냄
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
         return save(request, metadata);
     }
@@ -34,13 +33,13 @@ public class JourneyService {
 
         boolean hasExif = metadata.year() != null;
         String verifyStatus = hasExif ? "VERIFIED" : "UNVERIFIED";
-        Double verifyConfidence = hasExif ? 1.0 : 0.0;
+        Integer verifyConfidence = hasExif ? 1 : 0;
 
         JourneySaveRequest.Tags tags = request.tags();
         JourneySaveRequest.TagSources tagSources = request.tagSources();
 
         Journey journey = Journey.builder()
-                .userId(request.userId())
+                .authorId(request.userId())
                 .productId(request.productId())
                 .photoUrl(request.photoUrl())
                 .country(country)
@@ -49,21 +48,26 @@ public class JourneyService {
                 .journeyMonth(journeyMonth)
                 .season(metadata.season())
                 .activityTag(tags != null ? tags.activity() : null)
-                .activityTagSource(tagSources.activity())
+                .activitySource(tagSources.activity())
                 .situationTag(tags != null ? tags.situation() : null)
-                .situationTagSource(tagSources.situation())
+                .situationSource(tagSources.situation())
                 .styleTag(tags != null ? tags.style() : null)
-                .styleTagSource(tagSources.style())
+                .styleSource(tagSources.style())
                 .recallText(request.recallText())
                 .recallTone(request.recallTone())
                 .userMemo(request.userMemo())
                 .verifyStatus(verifyStatus)
                 .verifyConfidence(verifyConfidence)
                 .generation(1)
-                .isFirstJourney(isFirstJourney)
+                .firstJourney(isFirstJourney)
                 .build();
 
         Journey saved = journeyRepository.save(journey);
         return new JourneySaveResponse(saved.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public long countJourneys(Long productId, Long authorId) {
+        return journeyRepository.countByProductIdAndAuthorId(productId, authorId);
     }
 }
