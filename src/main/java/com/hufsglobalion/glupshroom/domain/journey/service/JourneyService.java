@@ -7,6 +7,8 @@ import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.repository.JourneyRepository;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadata;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadataExtractor;
+import com.hufsglobalion.glupshroom.domain.ownership.repository.OwnershipHistoryRepository;
+import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
@@ -28,6 +30,7 @@ public class JourneyService {
     private final JourneyRepository journeyRepository;
     private final ProductRepository productRepository;
     private final PhotoMetadataExtractor photoMetadataExtractor;
+    private final OwnershipHistoryRepository ownershipHistoryRepository;
 
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
@@ -95,6 +98,12 @@ public class JourneyService {
             throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
         }
 
+        boolean isOwning = ownershipHistoryRepository
+                .findFirstByProductIdAndOwnerIdAndOwnershipStatusOrderByGenerationDesc(
+                        productId, userId, OwnershipStatus.OWNING)
+                .isPresent();
+        String ownershipStatus = isOwning ? OwnershipStatus.OWNING.getValue() : OwnershipStatus.TRANSFERRED.getValue();
+
         Sort sortOption = "country".equalsIgnoreCase(sort)
                 ? Sort.by(Sort.Direction.ASC, "country")
                 : Sort.by(Sort.Direction.DESC, "journeyYear").and(Sort.by(Sort.Direction.DESC, "journeyMonth"));
@@ -111,7 +120,7 @@ public class JourneyService {
                         j.getCity(),
                         j.getJourneyYear(),
                         j.getJourneyMonth(),
-                        "owning" // TODO: ownership_history 연동 전까지 기본값
+                        ownershipStatus
                 ))
                 .toList();
 
