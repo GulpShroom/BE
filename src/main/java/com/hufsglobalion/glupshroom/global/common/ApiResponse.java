@@ -30,4 +30,7 @@ public record ApiResponse<T>(
                 .withNano(0)
                 .format(TIMESTAMP_FORMATTER);
     }
+    public static <T> ApiResponse<T> of(String code, String message, T data) {
+        return new ApiResponse<>(code, message, data, null, now());
+    }
 }
