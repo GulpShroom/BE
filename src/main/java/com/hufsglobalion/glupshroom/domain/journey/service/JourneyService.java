@@ -26,8 +26,7 @@ public class JourneyService {
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
         return save(request, metadata);
     }
-
-    @Transactional
+    
     protected JourneySaveResponse save(JourneySaveRequest request, PhotoMetadata metadata) {
         Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
