@@ -6,6 +6,10 @@ import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.repository.JourneyRepository;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadata;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadataExtractor;
+import com.hufsglobalion.glupshroom.domain.product.entity.Product;
+import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
+import com.hufsglobalion.glupshroom.global.exception.CustomException;
+import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class JourneyService {
 
     private final JourneyRepository journeyRepository;
+    private final ProductRepository productRepository;
     private final PhotoMetadataExtractor photoMetadataExtractor;
 
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
@@ -24,6 +29,13 @@ public class JourneyService {
 
     @Transactional
     protected JourneySaveResponse save(JourneySaveRequest request, PhotoMetadata metadata) {
+        Product product = productRepository.findById(request.productId())
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (!product.getCurrentOwnerId().equals(request.userId())) {
+            throw new CustomException(ErrorCode.PRODUCT_OWNER_MISMATCH);
+        }
+
         boolean isFirstJourney = journeyRepository.countByProductId(request.productId()) == 0;
 
         Integer journeyYear = metadata.year() != null ? metadata.year() : request.journeyYear();
@@ -58,7 +70,7 @@ public class JourneyService {
                 .userMemo(request.userMemo())
                 .verifyStatus(verifyStatus)
                 .verifyConfidence(verifyConfidence)
-                .generation(1)
+                .generation(product.getCurrentGeneration())
                 .firstJourney(isFirstJourney)
                 .build();
 
