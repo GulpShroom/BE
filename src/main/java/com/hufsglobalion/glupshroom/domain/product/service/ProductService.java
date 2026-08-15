@@ -8,6 +8,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.domain.transfer.entity.TransferLetter;
@@ -49,6 +50,26 @@ public class ProductService {
                 .toList();
 
         return new MyProductListResponse(userId, status.getValue(), products);
+    }
+
+    public ProductSummaryResponse getProductSummary(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        return new ProductSummaryResponse(
+                product.getId(),
+                product.getNickname(),
+                product.getOfficialName(),
+                product.isAuthenticated(),
+                Math.toIntExact(journeyService.countJourneys(productId)),
+                product.getProvenanceScore(),
+                getProvenanceStatus(product.getProvenanceScore()),
+                Math.toIntExact(ownershipService.countKeepers(productId))
+        );
+    }
+
+    private String getProvenanceStatus(Integer provenanceScore) {
+        return provenanceScore == null ? "calculating" : "calculated";
     }
 
     private List<OwnershipHistory> findOwnershipHistories(Long userId, ProductListStatus status) {
