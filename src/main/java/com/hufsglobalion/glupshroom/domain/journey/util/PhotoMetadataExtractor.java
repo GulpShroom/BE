@@ -7,6 +7,7 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -23,7 +24,14 @@ import java.util.Map;
 @Component
 public class PhotoMetadataExtractor {
 
-    private final RestClient restClient = RestClient.create();
+    private final RestClient restClient;
+
+    public PhotoMetadataExtractor() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3000);
+        factory.setReadTimeout(3000);
+        this.restClient = RestClient.builder().requestFactory(factory).build();
+    }
 
     public PhotoMetadata extract(String photoUrl) {
         Integer year = null;

@@ -17,16 +17,24 @@ public class JourneyService {
     private final JourneyRepository journeyRepository;
     private final PhotoMetadataExtractor photoMetadataExtractor;
 
-    @Transactional
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
-        boolean isFirstJourney = journeyRepository.countByProductId(request.productId()) == 0;
-
+        // 사진 다운로드 + EXIF/역지오코딩(느린 외부 I/O)은 트랜잭션 시작 전에 끝냄
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
+        return save(request, metadata);
+    }
+
+    @Transactional
+    protected JourneySaveResponse save(JourneySaveRequest request, PhotoMetadata metadata) {
+        boolean isFirstJourney = journeyRepository.countByProductId(request.productId()) == 0;
 
         Integer journeyYear = metadata.year() != null ? metadata.year() : request.journeyYear();
         Integer journeyMonth = metadata.month() != null ? metadata.month() : request.journeyMonth();
         String country = metadata.country() != null ? metadata.country() : request.country();
         String city = metadata.city() != null ? metadata.city() : request.city();
+
+        boolean hasExif = metadata.year() != null;
+        String verifyStatus = hasExif ? "VERIFIED" : "UNVERIFIED";
+        Double verifyConfidence = hasExif ? 1.0 : 0.0;
 
         JourneySaveRequest.Tags tags = request.tags();
         JourneySaveRequest.TagSources tagSources = request.tagSources();
@@ -49,8 +57,8 @@ public class JourneyService {
                 .recallText(request.recallText())
                 .recallTone(request.recallTone())
                 .userMemo(request.userMemo())
-                .verifyStatus("PENDING")
-                .verifyConfidence(null)
+                .verifyStatus(verifyStatus)
+                .verifyConfidence(verifyConfidence)
                 .generation(1)
                 .isFirstJourney(isFirstJourney)
                 .build();
