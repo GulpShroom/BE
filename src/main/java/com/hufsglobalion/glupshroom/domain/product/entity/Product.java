@@ -1,0 +1,80 @@
+package com.hufsglobalion.glupshroom.domain.product.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Table(name = "product")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Product {
+
+    @Id
+    @Column(name = "product_id")
+    private Long id;
+
+    @Column(name = "passport_id", nullable = false, length = 50)
+    private String passportId;
+
+    @Column(name = "serial_no", nullable = false, length = 50)
+    private String serialNo;
+
+    @Column(name = "official_name", nullable = false, length = 100)
+    private String officialName;
+
+    @Column(name = "nickname", length = 50)
+    private String nickname;
+
+    @Column(name = "official_image_url", length = 500)
+    private String officialImageUrl;
+
+    @Column(name = "manufacture_year")
+    private Integer manufactureYear;
+
+    @Column(name = "product_line", length = 50)
+    private String productLine;
+
+    @Column(name = "color", length = 50)
+    private String color;
+
+    @Column(name = "is_authenticated", nullable = false)
+    private boolean authenticated;
+
+    @Column(name = "authenticated_at")
+    private LocalDate authenticatedAt;
+
+    @Column(name = "purchase_date")
+    private LocalDate purchaseDate;
+
+    @Column(name = "store_id")
+    private Long storeId;
+
+    @Column(name = "current_owner_id", nullable = false)
+    private Long currentOwnerId;
+
+    @Column(name = "current_generation", nullable = false)
+    private Integer currentGeneration;
+
+    @Column(name = "provenance_score")
+    private Integer provenanceScore;
+
+    @Column(name = "narrative_score")
+    private Integer narrativeScore;
+
+    @Column(name = "condition_coef", precision = 3, scale = 2)
+    private BigDecimal conditionCoef;
+
+    @Column(name = "care_coef", precision = 3, scale = 2)
+    private BigDecimal careCoef;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+}
