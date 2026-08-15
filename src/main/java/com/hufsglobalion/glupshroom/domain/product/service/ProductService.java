@@ -61,9 +61,7 @@ public class ProductService {
 
     private ProductItem toProductItem(Long userId, OwnershipHistory ownershipHistory) {
         Product product = productRepository.findById(ownershipHistory.getProductId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "소유 이력에 연결된 제품을 찾을 수 없습니다. productId=" + ownershipHistory.getProductId()
-                ));
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_LIST_RETRIEVAL_FAILED));
 
         InheritanceLetterPreview inheritanceLetter = transferService
                 .findLatestOpenedLetter(product.getId(), userId)
