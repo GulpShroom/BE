@@ -8,6 +8,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.domain.transfer.entity.TransferLetter;
@@ -30,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
 
     private static final ZoneOffset KST_OFFSET = ZoneOffset.ofHours(9);
+    private static final long MINIMUM_JOURNEY_COUNT_FOR_PROVENANCE = 3L;
 
     private final ProductRepository productRepository;
     private final UserService userService;
@@ -49,6 +51,36 @@ public class ProductService {
                 .toList();
 
         return new MyProductListResponse(userId, status.getValue(), products);
+    }
+
+    public ProductSummaryResponse getProductSummary(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        long journeyCount = journeyService.countJourneys(productId);
+
+        return new ProductSummaryResponse(
+                product.getId(),
+                product.getNickname(),
+                product.getOfficialName(),
+                product.isAuthenticated(),
+                Math.toIntExact(journeyCount),
+                product.getProvenanceScore(),
+                getProvenanceStatus(product.getProvenanceScore(), journeyCount),
+                Math.toIntExact(ownershipService.countKeepers(productId))
+        );
+    }
+
+    private String getProvenanceStatus(Integer provenanceScore, long journeyCount) {
+        if (provenanceScore != null) {
+            return "calculated";
+        }
+
+        if (journeyCount < MINIMUM_JOURNEY_COUNT_FOR_PROVENANCE) {
+            return "insufficient";
+        }
+
+        return "calculating";
     }
 
     private List<OwnershipHistory> findOwnershipHistories(Long userId, ProductListStatus status) {
