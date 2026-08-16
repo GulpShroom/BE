@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.web.bind.annotation.*;
@@ -27,5 +28,14 @@ public class JourneyController {
     public ApiResponse<JourneySaveResponse> saveJourney(@RequestBody @Valid JourneySaveRequest request) {
         JourneySaveResponse response = journeyService.saveJourney(request);
         return ApiResponse.of("S201", "여정 저장에 성공했습니다", response);
+    }
+    @Operation(summary = "여정 상세 조회", description = "여정 1건의 상세 정보를 조회합니다. 본인이 작성한 여정인지 여부(isAuthor)와 전체 필드를 반환합니다.")
+    @GetMapping("/journeys/{journeyId}")
+    public ApiResponse<JourneyDetailResponse> getJourneyDetail(
+            @PathVariable Long journeyId,
+            @RequestParam Long userId
+    ) {
+        JourneyDetailResponse response = journeyService.getJourneyDetail(journeyId, userId);
+        return ApiResponse.success("여정 상세 조회에 성공했습니다", response);
     }
 }
