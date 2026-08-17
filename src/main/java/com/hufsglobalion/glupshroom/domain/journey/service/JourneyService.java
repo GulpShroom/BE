@@ -81,6 +81,11 @@ public class JourneyService {
     }
 
     @Transactional(readOnly = true)
+    public long countJourneys(Long productId) {
+        return journeyRepository.countByProductId(productId);
+    }
+
+    @Transactional(readOnly = true)
     public long countJourneys(Long productId, Long authorId) {
         return journeyRepository.countByProductIdAndAuthorId(productId, authorId);
     }

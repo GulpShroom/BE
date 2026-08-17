@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface OwnershipHistoryRepository extends JpaRepository<OwnershipHistory, Long> {
 
+    long countByProductId(Long productId);
+
     List<OwnershipHistory> findByOwnerId(Long ownerId);
 
     List<OwnershipHistory> findByOwnerIdAndOwnershipStatus(
