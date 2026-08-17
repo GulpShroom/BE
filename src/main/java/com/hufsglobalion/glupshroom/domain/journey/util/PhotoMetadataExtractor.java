@@ -39,6 +39,7 @@ public class PhotoMetadataExtractor {
         String season = null;
         String country = null;
         String city = null;
+        LocalDateTime takenAt = null;
 
         try (InputStream inputStream = URI.create(photoUrl).toURL().openStream()) {
             Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
@@ -51,6 +52,7 @@ public class PhotoMetadataExtractor {
                     year = dateTime.getYear();
                     month = dateTime.getMonthValue();
                     season = toSeason(month);
+                    takenAt = dateTime;
                 }
             }
 
@@ -67,9 +69,8 @@ public class PhotoMetadataExtractor {
             log.warn("사진 EXIF 메타데이터 추출 실패: {}", e.getMessage());
         }
 
-        return new PhotoMetadata(year, month, season, country, city);
+        return new PhotoMetadata(year, month, season, country, city, takenAt);
     }
-
     private String toSeason(int month) {
         return switch (month) {
             case 3, 4, 5 -> "spring";
