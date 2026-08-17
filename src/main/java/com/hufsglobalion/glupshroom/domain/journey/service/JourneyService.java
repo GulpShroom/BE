@@ -73,6 +73,7 @@ public class JourneyService {
                 .journeyYear(journeyYear)
                 .journeyMonth(journeyMonth)
                 .season(metadata.season())
+                .exifTakenAt(metadata.takenAt())
                 .activityTag(tags != null ? tags.activity() : null)
                 .activitySource(tagSources.activity())
                 .situationTag(tags != null ? tags.situation() : null)
@@ -187,7 +188,7 @@ public class JourneyService {
             throw new CustomException(ErrorCode.JOURNEY_ACCESS_DENIED);
         }
 
-        boolean hasExifDate = "VERIFIED".equals(journey.getVerifyStatus());
+        boolean hasExifDate = journey.getExifTakenAt() != null;
         if (hasExifDate && (request.journeyYear() != null || request.journeyMonth() != null)) {
             throw new CustomException(ErrorCode.JOURNEY_DATE_LOCKED);
         }
