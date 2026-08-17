@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.journey.repository;
 
 import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,6 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
     long countByProductIdAndAuthorId(Long productId, Long authorId);
 
     Page<Journey> findByProductIdAndAuthorId(Long productId, Long authorId, Pageable pageable);
+
+    List<Journey> findByProductIdAndAuthorIdOrderByJourneyYearAscJourneyMonthAsc(Long productId, Long authorId);
 }
