@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.journey.service;
 
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
@@ -21,6 +22,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -95,6 +98,43 @@ public class JourneyService {
     @Transactional(readOnly = true)
     public long countJourneys(Long productId, Long authorId) {
         return journeyRepository.countByProductIdAndAuthorId(productId, authorId);
+    }
+
+    @Transactional(readOnly = true)
+    public JourneyDetailResponse getJourneyDetail(Long journeyId, Long userId) {
+        Journey journey = journeyRepository.findById(journeyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_NOT_FOUND));
+
+        boolean isAuthor = journey.getAuthorId().equals(userId);
+        if (!isAuthor) {
+            throw new CustomException(ErrorCode.JOURNEY_NOT_FOUND);
+        }
+
+        JourneyDetailResponse.Tags tags = new JourneyDetailResponse.Tags(
+                new JourneyDetailResponse.TagDetail(journey.getActivityTag(), journey.getActivitySource()),
+                new JourneyDetailResponse.TagDetail(journey.getSituationTag(), journey.getSituationSource()),
+                new JourneyDetailResponse.TagDetail(journey.getStyleTag(), journey.getStyleSource())
+        );
+
+        String createdAt = journey.getCreatedAt()
+                .atOffset(ZoneOffset.ofHours(9))
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        return new JourneyDetailResponse(
+                journey.getId(),
+                isAuthor,
+                journey.isFirstJourney(),
+                journey.getPhotoUrl(),
+                journey.getCountry(),
+                journey.getCity(),
+                journey.getJourneyYear(),
+                journey.getJourneyMonth(),
+                tags,
+                journey.getRecallText(),
+                journey.getRecallTone(),
+                journey.getUserMemo(),
+                createdAt
+        );
     }
 
     @Transactional(readOnly = true)
