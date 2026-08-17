@@ -8,6 +8,8 @@ import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse.Generation;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
@@ -71,6 +73,17 @@ public class ProductService {
         );
     }
 
+    public ProductLineageResponse getProductLineage(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        List<Generation> generations = ownershipService.findProductOwnershipHistories(productId).stream()
+                .map(ownershipHistory -> toGeneration(productId, ownershipHistory))
+                .toList();
+
+        return new ProductLineageResponse(product.getId(), generations);
+    }
+
     private String getProvenanceStatus(Integer provenanceScore, long journeyCount) {
         if (provenanceScore != null) {
             return "calculated";
@@ -81,6 +94,27 @@ public class ProductService {
         }
 
         return "calculating";
+    }
+
+    private Generation toGeneration(Long productId, OwnershipHistory ownershipHistory) {
+        return new Generation(
+                ownershipHistory.getId(),
+                ownershipHistory.getGeneration(),
+                toKeeperLabel(ownershipHistory.getGeneration()),
+                ownershipHistory.getOwnershipStatus() == OwnershipStatus.OWNING,
+                ownershipHistory.getOwnedFrom(),
+                ownershipHistory.getOwnedTo(),
+                toDurationText(ownershipHistory),
+                transferService.hasOpenedLetter(productId, ownershipHistory.getOwnerId())
+        );
+    }
+
+    private String toDurationText(OwnershipHistory ownershipHistory) {
+        String endYear = ownershipHistory.getOwnedTo() == null
+                ? "현재"
+                : String.valueOf(ownershipHistory.getOwnedTo().getYear());
+
+        return ownershipHistory.getOwnedFrom().getYear() + " ~ " + endYear;
     }
 
     private List<OwnershipHistory> findOwnershipHistories(Long userId, ProductListStatus status) {

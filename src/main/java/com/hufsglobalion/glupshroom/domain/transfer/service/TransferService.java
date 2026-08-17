@@ -17,6 +17,17 @@ public class TransferService {
     private final TransferRepository transferRepository;
     private final TransferLetterRepository transferLetterRepository;
 
+    public boolean hasOpenedLetter(Long productId, Long fromUserId) {
+        return transferRepository
+                .findFirstByProductIdAndFromUserIdAndTransferStatusAndCompletedAtIsNotNullOrderByCompletedAtDesc(
+                        productId,
+                        fromUserId,
+                        TransferStatus.COMPLETED
+                )
+                .flatMap(transfer -> transferLetterRepository.findByTransferIdAndSealedFalse(transfer.getId()))
+                .isPresent();
+    }
+
     public Optional<TransferLetter> findLatestOpenedLetter(Long productId, Long userId) {
         return transferRepository
                 .findFirstByProductIdAndToUserIdAndTransferStatusAndCompletedAtIsNotNullOrderByCompletedAtDesc(
