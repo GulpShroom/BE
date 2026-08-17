@@ -26,7 +26,8 @@ public class ResellService {
 
     @Transactional
     public ResellSaveResponse saveResell(ResellSaveRequest request) {
-        if (request.sellerId() == null || request.productId() == null || request.price() == null) {
+        if (request.sellerId() == null || request.productId() == null || request.price() == null
+                || request.photoUrls() == null || request.photoUrls().isEmpty()) {
             throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
         }
 
