@@ -21,7 +21,13 @@ public enum ErrorCode {
     CANNOT_BUY_OWN_PRODUCT(HttpStatus.BAD_REQUEST, "E400", "본인의 제품은 구매할 수 없습니다"),
     RESELL_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "리셀글을 찾을 수 없습니다"),
     TRANSFER_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "E409", "이미 진행 중인 이전이 있습니다"),
-    TRANSFER_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "계승 시작 중 오류가 발생했습니다");
+    TRANSFER_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "계승 시작 중 오류가 발생했습니다"),
+
+    JOURNEY_ACCESS_DENIED(HttpStatus.FORBIDDEN, "E403", "본인이 작성한 여정만 수정할 수 있습니다"),
+    JOURNEY_INVALID_REQUESTER(HttpStatus.BAD_REQUEST, "E400", "요청자 정보를 확인할 수 없습니다"),
+    INVALID_FORMAT(HttpStatus.BAD_REQUEST, "E400", "입력하신 값 중 형식이 올바르지 않은 항목이 있습니다"),
+    JOURNEY_DATE_LOCKED(HttpStatus.BAD_REQUEST, "E400", "사진에서 촬영 날짜가 확인된 여정은 날짜를 수정할 수 없습니다"),
+    JOURNEY_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "여정을 찾을 수 없습니다");
 
     private final HttpStatus status;
     private final String code;
