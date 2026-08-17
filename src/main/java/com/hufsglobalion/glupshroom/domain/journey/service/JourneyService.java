@@ -95,6 +95,9 @@ public class JourneyService {
                 .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_NOT_FOUND));
 
         boolean isAuthor = journey.getAuthorId().equals(userId);
+        if (!isAuthor) {
+            throw new CustomException(ErrorCode.JOURNEY_NOT_FOUND);
+        }
 
         JourneyDetailResponse.Tags tags = new JourneyDetailResponse.Tags(
                 new JourneyDetailResponse.TagDetail(journey.getActivityTag(), journey.getActivitySource()),
