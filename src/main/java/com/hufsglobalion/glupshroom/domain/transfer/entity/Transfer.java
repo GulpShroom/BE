@@ -3,10 +3,14 @@ package com.hufsglobalion.glupshroom.domain.transfer.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,6 +21,7 @@ import lombok.NoArgsConstructor;
 public class Transfer {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "transfer_id")
     private Long id;
 
@@ -44,4 +49,20 @@ public class Transfer {
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
+
+    @Builder
+    private Transfer(Long productId, Long fromUserId, Long toUserId, String transferType,
+                      boolean official, TransferStatus transferStatus) {
+        this.productId = productId;
+        this.fromUserId = fromUserId;
+        this.toUserId = toUserId;
+        this.transferType = transferType;
+        this.official = official;
+        this.transferStatus = transferStatus;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        this.requestedAt = LocalDateTime.now();
+    }
 }
