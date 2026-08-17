@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.product.controller;
 
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
 import com.hufsglobalion.glupshroom.domain.product.service.ProductService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -36,5 +37,12 @@ public class ProductController {
     public ApiResponse<ProductSummaryResponse> getProductSummary(@PathVariable Long productId) {
         ProductSummaryResponse response = productService.getProductSummary(productId);
         return ApiResponse.success("제품 요약 정보를 조회했습니다", response);
+    }
+
+    @Operation(summary = "계보 타임라인 조회", description = "제품의 세대별 소유 이력을 계보 타임라인으로 조회합니다.")
+    @GetMapping("/products/{productId}/lineage")
+    public ApiResponse<ProductLineageResponse> getProductLineage(@PathVariable Long productId) {
+        ProductLineageResponse response = productService.getProductLineage(productId);
+        return ApiResponse.success("계보 타임라인을 조회했습니다", response);
     }
 }
