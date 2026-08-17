@@ -29,6 +29,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -90,15 +91,21 @@ public class ProductService {
             ProductMaster productMaster = productMasterRepository.findById(serialNo)
                     .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_MASTER_NOT_FOUND));
 
+            Optional<Product> registeredProduct = productRepository.findBySerialNo(productMaster.getSerialNo());
+            boolean isRegistered = registeredProduct.isPresent();
+            LocalDate authenticatedAt = isRegistered
+                    ? registeredProduct.get().getAuthenticatedAt()
+                    : LocalDate.now();
+
             return new ProductScanResponse(
-                    productRepository.existsBySerialNo(productMaster.getSerialNo()),
+                    isRegistered,
                     productMaster.getSerialNo(),
                     productMaster.getOfficialName(),
                     productMaster.getOfficialImageUrl(),
                     productMaster.getManufactureYear(),
                     productMaster.getProductLine(),
                     productMaster.getColor(),
-                    LocalDate.now()
+                    authenticatedAt
             );
         } catch (DataAccessException e) {
             log.error("Product scan database lookup failed", e);
