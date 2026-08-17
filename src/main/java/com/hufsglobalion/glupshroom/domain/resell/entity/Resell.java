@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Resell {
 
+    private static final String STATUS_ACTIVE = "active";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="resell_id")
@@ -45,4 +47,7 @@ public class Resell {
     @Column(name="created_at", nullable = false)
     private LocalDateTime createdAt;
 
+    public boolean isSelling() {
+        return STATUS_ACTIVE.equals(postStatus);
+    }
 }
