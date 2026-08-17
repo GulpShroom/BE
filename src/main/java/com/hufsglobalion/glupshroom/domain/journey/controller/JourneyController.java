@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.journey.controller;
 
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.journey.service.JourneyService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -9,9 +10,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
-import org.springframework.web.bind.annotation.*;
-
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Journey", description = "여정 저장/조회 관련 API")
@@ -29,8 +27,9 @@ public class JourneyController {
         JourneySaveResponse response = journeyService.saveJourney(request);
         return ApiResponse.of("S201", "여정 저장에 성공했습니다", response);
     }
+
     @Operation(summary = "여정 상세 조회", description = "여정 1건의 상세 정보를 조회합니다. 본인이 작성한 여정인지 여부(isAuthor)와 전체 필드를 반환합니다.")
-    @GetMapping("/journeys/{journeyId}")
+    @GetMapping("/{journeyId}")
     public ApiResponse<JourneyDetailResponse> getJourneyDetail(
             @PathVariable Long journeyId,
             @RequestParam Long userId
