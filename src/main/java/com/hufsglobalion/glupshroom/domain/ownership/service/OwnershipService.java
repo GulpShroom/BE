@@ -20,6 +20,10 @@ public class OwnershipService {
         return ownershipHistoryRepository.findByProductIdOrderByGenerationAsc(productId);
     }
 
+    public Optional<OwnershipHistory> findProductOwnershipHistory(Long productId, Integer generation) {
+        return ownershipHistoryRepository.findByProductIdAndGeneration(productId, generation);
+    }
+
     public long countKeepers(Long productId) {
         return ownershipHistoryRepository.countByProductId(productId);
     }

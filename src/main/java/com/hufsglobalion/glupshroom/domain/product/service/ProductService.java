@@ -5,29 +5,39 @@ import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipHistory;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
 import com.hufsglobalion.glupshroom.domain.ownership.service.OwnershipService;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus;
+import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse.Generation;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
+import com.hufsglobalion.glupshroom.domain.product.entity.ProductMaster;
+import com.hufsglobalion.glupshroom.domain.product.repository.ProductMasterRepository;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.domain.transfer.entity.TransferLetter;
 import com.hufsglobalion.glupshroom.domain.transfer.service.TransferService;
 import com.hufsglobalion.glupshroom.domain.user.service.UserService;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProductService {
@@ -36,6 +46,7 @@ public class ProductService {
     private static final long MINIMUM_JOURNEY_COUNT_FOR_PROVENANCE = 3L;
 
     private final ProductRepository productRepository;
+    private final ProductMasterRepository productMasterRepository;
     private final UserService userService;
     private final OwnershipService ownershipService;
     private final JourneyService journeyService;
@@ -73,6 +84,35 @@ public class ProductService {
         );
     }
 
+    public ProductScanResponse scanProduct(ProductScanRequest request) {
+        String serialNo = resolveSerialNo(request);
+
+        try {
+            ProductMaster productMaster = productMasterRepository.findById(serialNo)
+                    .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_MASTER_NOT_FOUND));
+
+            Optional<Product> registeredProduct = productRepository.findBySerialNo(productMaster.getSerialNo());
+            boolean isRegistered = registeredProduct.isPresent();
+            LocalDate authenticatedAt = isRegistered
+                    ? registeredProduct.get().getAuthenticatedAt()
+                    : LocalDate.now();
+
+            return new ProductScanResponse(
+                    isRegistered,
+                    productMaster.getSerialNo(),
+                    productMaster.getOfficialName(),
+                    productMaster.getOfficialImageUrl(),
+                    productMaster.getManufactureYear(),
+                    productMaster.getProductLine(),
+                    productMaster.getColor(),
+                    authenticatedAt
+            );
+        } catch (DataAccessException e) {
+            log.error("Product scan database lookup failed", e);
+            throw new CustomException(ErrorCode.PRODUCT_SCAN_FAILED);
+        }
+    }
+
     public ProductLineageResponse getProductLineage(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
@@ -82,6 +122,26 @@ public class ProductService {
                 .toList();
 
         return new ProductLineageResponse(product.getId(), generations);
+    }
+
+    public GenerationLetterResponse getGenerationLetter(Long productId, Integer generation) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        OwnershipHistory ownershipHistory = ownershipService.findProductOwnershipHistory(productId, generation)
+                .orElseThrow(() -> new CustomException(ErrorCode.GENERATION_LETTER_NOT_FOUND));
+
+        TransferLetter letter = transferService.findOpenedLetter(productId, generation)
+                .orElseThrow(() -> new CustomException(ErrorCode.GENERATION_LETTER_NOT_FOUND));
+
+        return new GenerationLetterResponse(
+                product.getId(),
+                ownershipHistory.getGeneration(),
+                letter.getTransferId(),
+                letter.getId(),
+                letter.getContent(),
+                toKst(letter.getOpenedAt())
+        );
     }
 
     private String getProvenanceStatus(Integer provenanceScore, long journeyCount) {
@@ -96,6 +156,28 @@ public class ProductService {
         return "calculating";
     }
 
+    private String resolveSerialNo(ProductScanRequest request) {
+        String serialNo = normalize(request.serialNo());
+        String qrCode = normalize(request.qrCode());
+
+        if (serialNo == null && qrCode == null) {
+            throw new CustomException(ErrorCode.INVALID_PRODUCT_SCAN_REQUEST);
+        }
+
+        if (serialNo != null && qrCode != null && !serialNo.equals(qrCode)) {
+            throw new CustomException(ErrorCode.INVALID_PRODUCT_SCAN_REQUEST);
+        }
+
+        return serialNo != null ? serialNo : qrCode;
+    }
+
+    private String normalize(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
     private Generation toGeneration(Long productId, OwnershipHistory ownershipHistory) {
         return new Generation(
                 ownershipHistory.getId(),
@@ -105,7 +187,7 @@ public class ProductService {
                 ownershipHistory.getOwnedFrom(),
                 ownershipHistory.getOwnedTo(),
                 toDurationText(ownershipHistory),
-                transferService.hasOpenedLetter(productId, ownershipHistory.getOwnerId())
+                transferService.hasOpenedLetter(productId, ownershipHistory.getGeneration())
         );
     }
 
