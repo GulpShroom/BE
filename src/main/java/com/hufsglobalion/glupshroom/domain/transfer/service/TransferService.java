@@ -35,15 +35,18 @@ public class TransferService {
     private final ResellRepository resellRepository;
     private final ProductRepository productRepository;
 
-    public boolean hasOpenedLetter(Long productId, Long fromUserId) {
+    public boolean hasOpenedLetter(Long productId, Integer generation) {
+        return findOpenedLetter(productId, generation).isPresent();
+    }
+
+    public Optional<TransferLetter> findOpenedLetter(Long productId, Integer generation) {
         return transferRepository
-                .findFirstByProductIdAndFromUserIdAndTransferStatusAndCompletedAtIsNotNullOrderByCompletedAtDesc(
+                .findFirstByProductIdAndGenerationAndTransferStatusAndCompletedAtIsNotNullOrderByCompletedAtDesc(
                         productId,
-                        fromUserId,
+                        generation,
                         TransferStatus.COMPLETED
                 )
-                .flatMap(transfer -> transferLetterRepository.findByTransferIdAndSealedFalse(transfer.getId()))
-                .isPresent();
+                .flatMap(transfer -> transferLetterRepository.findByTransferIdAndSealedFalse(transfer.getId()));
     }
 
     public Optional<TransferLetter> findLatestOpenedLetter(Long productId, Long userId) {
@@ -76,6 +79,7 @@ public class TransferService {
 
         Transfer transfer = Transfer.builder()
                 .productId(product.getId())
+                .generation(product.getCurrentGeneration())
                 .fromUserId(sellerId)
                 .toUserId(buyerId)
                 .transferType(TRANSFER_TYPE_RESELL)

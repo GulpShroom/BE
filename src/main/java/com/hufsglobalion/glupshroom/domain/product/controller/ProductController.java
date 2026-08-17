@@ -2,6 +2,7 @@ package com.hufsglobalion.glupshroom.domain.product.controller;
 
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
@@ -55,5 +56,15 @@ public class ProductController {
     public ApiResponse<ProductLineageResponse> getProductLineage(@PathVariable Long productId) {
         ProductLineageResponse response = productService.getProductLineage(productId);
         return ApiResponse.success("계보 타임라인을 조회했습니다", response);
+    }
+
+    @Operation(summary = "대별 편지 조회", description = "제품의 특정 Keeper 세대가 남긴 개봉 편지를 조회합니다.")
+    @GetMapping("/products/{productId}/lineage/{generation}/letter")
+    public ApiResponse<GenerationLetterResponse> getGenerationLetter(
+            @PathVariable Long productId,
+            @PathVariable Integer generation
+    ) {
+        GenerationLetterResponse response = productService.getGenerationLetter(productId, generation);
+        return ApiResponse.success("대별 편지를 조회했습니다", response);
     }
 }
