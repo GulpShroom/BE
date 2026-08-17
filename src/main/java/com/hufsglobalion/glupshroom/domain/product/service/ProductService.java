@@ -92,7 +92,7 @@ public class ProductService {
         OwnershipHistory ownershipHistory = ownershipService.findProductOwnershipHistory(productId, generation)
                 .orElseThrow(() -> new CustomException(ErrorCode.GENERATION_LETTER_NOT_FOUND));
 
-        TransferLetter letter = transferService.findOpenedLetter(productId, ownershipHistory.getOwnerId())
+        TransferLetter letter = transferService.findOpenedLetter(productId, generation)
                 .orElseThrow(() -> new CustomException(ErrorCode.GENERATION_LETTER_NOT_FOUND));
 
         return new GenerationLetterResponse(
@@ -126,7 +126,7 @@ public class ProductService {
                 ownershipHistory.getOwnedFrom(),
                 ownershipHistory.getOwnedTo(),
                 toDurationText(ownershipHistory),
-                transferService.hasOpenedLetter(productId, ownershipHistory.getOwnerId())
+                transferService.hasOpenedLetter(productId, ownershipHistory.getGeneration())
         );
     }
 
