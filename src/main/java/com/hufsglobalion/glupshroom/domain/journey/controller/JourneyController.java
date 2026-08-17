@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.journey.controller;
 
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.journey.service.JourneyService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -11,11 +12,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.*;
-
 @Tag(name = "Journey", description = "여정 저장/조회 관련 API")
 @RestController
-@RequestMapping("/api/v1/mcarry/journeys")
+@RequestMapping("/api/v1/mcarry")
 @RequiredArgsConstructor
 public class JourneyController {
 
@@ -23,9 +22,22 @@ public class JourneyController {
 
     @Operation(summary = "여정 저장", description = "AI 큐레이터 결과와 사용자 수정값을 받아 여정을 최종 저장합니다.")
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping
+    @PostMapping("/journeys")
     public ApiResponse<JourneySaveResponse> saveJourney(@RequestBody @Valid JourneySaveRequest request) {
         JourneySaveResponse response = journeyService.saveJourney(request);
         return ApiResponse.of("S201", "여정 저장에 성공했습니다", response);
+    }
+
+    @Operation(summary = "여정 목록 조회", description = "제품의 여정 목록을 조회합니다. 본인이 작성한 기록만 반환하며 날짜/국가별 정렬을 지원합니다.")
+    @GetMapping("/products/{productId}/journeys")
+    public ApiResponse<JourneyListResponse> getJourneyList(
+            @PathVariable Long productId,
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "date") String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        JourneyListResponse response = journeyService.getJourneyList(productId, userId, sort, page, size);
+        return ApiResponse.success("여정 목록 조회에 성공했습니다", response);
     }
 }
