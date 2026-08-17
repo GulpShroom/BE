@@ -28,6 +28,9 @@ public class Transfer {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
+    @Column(name = "generation", nullable = false)
+    private Integer generation;
+
     @Column(name = "from_user_id", nullable = false)
     private Long fromUserId;
 
@@ -51,9 +54,10 @@ public class Transfer {
     private LocalDateTime completedAt;
 
     @Builder
-    private Transfer(Long productId, Long fromUserId, Long toUserId, String transferType,
+    private Transfer(Long productId, Integer generation, Long fromUserId, Long toUserId, String transferType,
                       boolean official, TransferStatus transferStatus) {
         this.productId = productId;
+        this.generation = generation;
         this.fromUserId = fromUserId;
         this.toUserId = toUserId;
         this.transferType = transferType;

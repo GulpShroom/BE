@@ -5,6 +5,7 @@ import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipHistory;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
 import com.hufsglobalion.glupshroom.domain.ownership.service.OwnershipService;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
@@ -84,6 +85,26 @@ public class ProductService {
         return new ProductLineageResponse(product.getId(), generations);
     }
 
+    public GenerationLetterResponse getGenerationLetter(Long productId, Integer generation) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        OwnershipHistory ownershipHistory = ownershipService.findProductOwnershipHistory(productId, generation)
+                .orElseThrow(() -> new CustomException(ErrorCode.GENERATION_LETTER_NOT_FOUND));
+
+        TransferLetter letter = transferService.findOpenedLetter(productId, generation)
+                .orElseThrow(() -> new CustomException(ErrorCode.GENERATION_LETTER_NOT_FOUND));
+
+        return new GenerationLetterResponse(
+                product.getId(),
+                ownershipHistory.getGeneration(),
+                letter.getTransferId(),
+                letter.getId(),
+                letter.getContent(),
+                toKst(letter.getOpenedAt())
+        );
+    }
+
     private String getProvenanceStatus(Integer provenanceScore, long journeyCount) {
         if (provenanceScore != null) {
             return "calculated";
@@ -105,7 +126,7 @@ public class ProductService {
                 ownershipHistory.getOwnedFrom(),
                 ownershipHistory.getOwnedTo(),
                 toDurationText(ownershipHistory),
-                transferService.hasOpenedLetter(productId, ownershipHistory.getOwnerId())
+                transferService.hasOpenedLetter(productId, ownershipHistory.getGeneration())
         );
     }
 
