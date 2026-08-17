@@ -13,6 +13,8 @@ import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
+import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneyUpdateRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyUpdateResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -130,5 +132,52 @@ public class JourneyService {
                 .toList();
 
         return new JourneyListResponse(journeyPage.getTotalElements(), summaries);
+    }
+
+    @Transactional
+    public JourneyUpdateResponse updateJourney(Long journeyId, JourneyUpdateRequest request) {
+        if (request.userId() == null) {
+            throw new CustomException(ErrorCode.JOURNEY_INVALID_REQUESTER);
+        }
+
+        Journey journey = journeyRepository.findById(journeyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_NOT_FOUND));
+
+        if (!journey.getAuthorId().equals(request.userId())) {
+            throw new CustomException(ErrorCode.JOURNEY_ACCESS_DENIED);
+        }
+
+        boolean hasExifDate = "VERIFIED".equals(journey.getVerifyStatus());
+        if (hasExifDate && (request.journeyYear() != null || request.journeyMonth() != null)) {
+            throw new CustomException(ErrorCode.JOURNEY_DATE_LOCKED);
+        }
+
+        JourneyUpdateRequest.Tags tags = request.tags();
+        JourneyUpdateRequest.TagSources tagSources = request.tagSources();
+
+        journey.updateDetails(
+                request.country(), request.city(),
+                request.journeyYear(), request.journeyMonth(),
+                tags != null ? tags.activity() : null, tagSources != null ? tagSources.activity() : null,
+                tags != null ? tags.situation() : null, tagSources != null ? tagSources.situation() : null,
+                tags != null ? tags.style() : null, tagSources != null ? tagSources.style() : null,
+                request.recallText(), request.recallTone(), request.userMemo()
+        );
+
+        return new JourneyUpdateResponse(
+                journey.getId(),
+                journey.getCountry(),
+                journey.getCity(),
+                journey.getJourneyYear(),
+                journey.getJourneyMonth(),
+                new JourneyUpdateResponse.Tags(
+                        new JourneyUpdateResponse.TagDetail(journey.getActivityTag(), journey.getActivitySource()),
+                        new JourneyUpdateResponse.TagDetail(journey.getSituationTag(), journey.getSituationSource()),
+                        new JourneyUpdateResponse.TagDetail(journey.getStyleTag(), journey.getStyleSource())
+                ),
+                journey.getRecallText(),
+                journey.getRecallTone(),
+                journey.getUserMemo()
+        );
     }
 }
