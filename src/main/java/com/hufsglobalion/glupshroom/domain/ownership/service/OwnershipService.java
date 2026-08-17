@@ -16,6 +16,10 @@ public class OwnershipService {
 
     private final OwnershipHistoryRepository ownershipHistoryRepository;
 
+    public List<OwnershipHistory> findProductOwnershipHistories(Long productId) {
+        return ownershipHistoryRepository.findByProductIdOrderByGenerationAsc(productId);
+    }
+
     public long countKeepers(Long productId) {
         return ownershipHistoryRepository.countByProductId(productId);
     }

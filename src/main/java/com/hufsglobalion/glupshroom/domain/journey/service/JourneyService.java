@@ -1,21 +1,30 @@
 package com.hufsglobalion.glupshroom.domain.journey.service;
 
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.repository.JourneyRepository;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadata;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadataExtractor;
+import com.hufsglobalion.glupshroom.domain.ownership.repository.OwnershipHistoryRepository;
+import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,12 +33,13 @@ public class JourneyService {
     private final JourneyRepository journeyRepository;
     private final ProductRepository productRepository;
     private final PhotoMetadataExtractor photoMetadataExtractor;
+    private final OwnershipHistoryRepository ownershipHistoryRepository;
 
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
         return save(request, metadata);
     }
-    
+
     protected JourneySaveResponse save(JourneySaveRequest request, PhotoMetadata metadata) {
         Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
@@ -89,6 +99,7 @@ public class JourneyService {
     public long countJourneys(Long productId, Long authorId) {
         return journeyRepository.countByProductIdAndAuthorId(productId, authorId);
     }
+
     @Transactional(readOnly = true)
     public JourneyDetailResponse getJourneyDetail(Long journeyId, Long userId) {
         Journey journey = journeyRepository.findById(journeyId)
@@ -124,5 +135,40 @@ public class JourneyService {
                 journey.getUserMemo(),
                 createdAt
         );
+    }
+
+    @Transactional(readOnly = true)
+    public JourneyListResponse getJourneyList(Long productId, Long userId, String sort, int page, int size) {
+        if (!productRepository.existsById(productId)) {
+            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        boolean isOwning = ownershipHistoryRepository
+                .findFirstByProductIdAndOwnerIdAndOwnershipStatusOrderByGenerationDesc(
+                        productId, userId, OwnershipStatus.OWNING)
+                .isPresent();
+        String ownershipStatus = isOwning ? OwnershipStatus.OWNING.getValue() : OwnershipStatus.TRANSFERRED.getValue();
+
+        Sort sortOption = "country".equalsIgnoreCase(sort)
+                ? Sort.by(Sort.Direction.ASC, "country")
+                : Sort.by(Sort.Direction.DESC, "journeyYear").and(Sort.by(Sort.Direction.DESC, "journeyMonth"));
+
+        Pageable pageable = PageRequest.of(page, size, sortOption);
+        Page<Journey> journeyPage = journeyRepository.findByProductIdAndAuthorId(productId, userId, pageable);
+
+        List<JourneyListResponse.JourneySummary> summaries = journeyPage.getContent().stream()
+                .map(j -> new JourneyListResponse.JourneySummary(
+                        j.getId(),
+                        j.getPhotoUrl(),
+                        j.getRecallText(),
+                        j.getCountry(),
+                        j.getCity(),
+                        j.getJourneyYear(),
+                        j.getJourneyMonth(),
+                        ownershipStatus
+                ))
+                .toList();
+
+        return new JourneyListResponse(journeyPage.getTotalElements(), summaries);
     }
 }
