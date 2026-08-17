@@ -132,6 +132,31 @@ public class Journey {
         this.firstJourney = firstJourney;
     }
 
+    public void updateDetails(String country, String city, Integer journeyYear, Integer journeyMonth,
+                              String activityTag, String activitySource,
+                              String situationTag, String situationSource,
+                              String styleTag, String styleSource,
+                              String recallText, String recallTone, String userMemo) {
+        if (country != null) this.country = country;
+        if (city != null) this.city = city;
+        if (journeyYear != null) this.journeyYear = journeyYear;
+        if (journeyMonth != null) this.journeyMonth = journeyMonth;
+        if (activityTag != null) {
+            this.activityTag = activityTag;
+            this.activitySource = activitySource;
+        }
+        if (situationTag != null) {
+            this.situationTag = situationTag;
+            this.situationSource = situationSource;
+        }
+        if (styleTag != null) {
+            this.styleTag = styleTag;
+            this.styleSource = styleSource;
+        }
+        if (recallText != null) this.recallText = recallText;
+        if (recallTone != null) this.recallTone = recallTone;
+        if (userMemo != null) this.userMemo = userMemo;
+    }
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
