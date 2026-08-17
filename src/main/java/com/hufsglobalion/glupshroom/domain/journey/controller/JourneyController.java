@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.journey.controller;
 
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.journey.service.JourneyService;
@@ -26,6 +27,16 @@ public class JourneyController {
     public ApiResponse<JourneySaveResponse> saveJourney(@RequestBody @Valid JourneySaveRequest request) {
         JourneySaveResponse response = journeyService.saveJourney(request);
         return ApiResponse.of("S201", "여정 저장에 성공했습니다", response);
+    }
+
+    @Operation(summary = "여정 상세 조회", description = "여정 1건의 상세 정보를 조회합니다. 본인이 작성한 여정인지 여부(isAuthor)와 전체 필드를 반환합니다.")
+    @GetMapping("/journeys/{journeyId}")
+    public ApiResponse<JourneyDetailResponse> getJourneyDetail(
+            @PathVariable Long journeyId,
+            @RequestParam Long userId
+    ) {
+        JourneyDetailResponse response = journeyService.getJourneyDetail(journeyId, userId);
+        return ApiResponse.success("여정 상세 조회에 성공했습니다", response);
     }
 
     @Operation(summary = "여정 목록 조회", description = "제품의 여정 목록을 조회합니다. 본인이 작성한 기록만 반환하며 날짜/국가별 정렬을 지원합니다.")
