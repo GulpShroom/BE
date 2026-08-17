@@ -8,6 +8,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface TransferRepository extends JpaRepository<Transfer, Long> {
 
+    Optional<Transfer> findFirstByProductIdAndFromUserIdAndTransferStatusAndCompletedAtIsNotNullOrderByCompletedAtDesc(
+            Long productId,
+            Long fromUserId,
+            TransferStatus transferStatus
+    );
+
     Optional<Transfer> findFirstByProductIdAndToUserIdAndTransferStatusAndCompletedAtIsNotNullOrderByCompletedAtDesc(
             Long productId,
             Long toUserId,
