@@ -24,7 +24,13 @@ public enum ErrorCode {
     CANNOT_BUY_OWN_PRODUCT(HttpStatus.BAD_REQUEST, "E400", "본인의 제품은 구매할 수 없습니다"),
     RESELL_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "리셀글을 찾을 수 없습니다"),
     TRANSFER_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "E409", "이미 진행 중인 이전이 있습니다"),
-    TRANSFER_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "계승 시작 중 오류가 발생했습니다");
+    TRANSFER_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "계승 시작 중 오류가 발생했습니다"),
+
+    LETTER_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "편지 내용을 입력해주세요"),
+    LETTER_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "편지 작성 권한이 없습니다"),
+    TRANSFER_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "이전 요청을 찾을 수 없습니다"),
+    LETTER_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "편지 저장 중 오류가 발생했습니다"),
+    LETTER_DRAFT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "초안 생성 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;
