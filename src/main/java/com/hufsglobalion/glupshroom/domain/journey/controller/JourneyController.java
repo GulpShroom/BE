@@ -63,4 +63,14 @@ public class JourneyController {
         JourneyUpdateResponse response = journeyService.updateJourney(journeyId, request);
         return ApiResponse.success("여정 수정에 성공했습니다", response);
     }
+
+    @Operation(summary = "여정 삭제", description = "저장된 여정을 삭제합니다. 본인이 작성한 여정만 삭제 가능합니다.")
+    @DeleteMapping("/journeys/{journeyId}")
+    public ApiResponse<Void> deleteJourney(
+            @PathVariable Long journeyId,
+            @RequestParam(required = false) Long userId
+    ) {
+        journeyService.deleteJourney(journeyId, userId);
+        return ApiResponse.success("여정 삭제에 성공했습니다", null);
+    }
 }

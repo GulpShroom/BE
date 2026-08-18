@@ -51,6 +51,7 @@ public enum ErrorCode {
 
     INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다"),
 
+    JOURNEY_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "본인이 작성한 여정만 삭제할 수 있습니다"),
     RESELL_INVALID_REQUESTER(HttpStatus.BAD_REQUEST, "E400", "요청자 정보를 확인할 수 없습니다"),
     RESELL_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "본인이 작성한 리셀글만 수정할 수 있습니다");
 

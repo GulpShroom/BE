@@ -262,4 +262,20 @@ public class JourneyService {
                 journey.getUserMemo()
         );
     }
+
+    @Transactional
+    public void deleteJourney(Long journeyId, Long userId) {
+        if (userId == null) {
+            throw new CustomException(ErrorCode.JOURNEY_INVALID_REQUESTER);
+        }
+
+        Journey journey = journeyRepository.findById(journeyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_NOT_FOUND));
+
+        if (!journey.getAuthorId().equals(userId)) {
+            throw new CustomException(ErrorCode.JOURNEY_DELETE_FORBIDDEN);
+        }
+
+        journeyRepository.delete(journey);
+    }
 }
