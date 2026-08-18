@@ -69,4 +69,9 @@ public class Transfer {
     public void prePersist() {
         this.requestedAt = LocalDateTime.now();
     }
+
+    public void complete() {
+        this.transferStatus = TransferStatus.COMPLETED;
+        this.completedAt = LocalDateTime.now();
+    }
 }
