@@ -44,11 +44,11 @@ public class ProductController {
         return ApiResponse.success("제품 요약 정보를 조회했습니다", response);
     }
 
-    @Operation(summary = "제품 스캔·정품 확인", description = "시리얼 번호 또는 QR 코드로 제품 정품 여부를 확인합니다.")
+    @Operation(summary = "제품 스캔·정품 확인", description = "시리얼 넘버 또는 QR 코드로 제품 정품 여부를 확인합니다.")
     @PostMapping("/products/scan")
     public ApiResponse<ProductScanResponse> scanProduct(@RequestBody ProductScanRequest request) {
         ProductScanResponse response = productService.scanProduct(request);
-        return ApiResponse.success("MCM 제품 인증이 완료되었습니다", response);
+        return ApiResponse.success("MCM 정품 인증이 완료되었습니다", response);
     }
 
     @Operation(summary = "계보 타임라인 조회", description = "제품의 세대별 소유 이력을 계보 타임라인으로 조회합니다.")
