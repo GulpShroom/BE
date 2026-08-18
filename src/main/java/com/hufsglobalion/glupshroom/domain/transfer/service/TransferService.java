@@ -2,6 +2,9 @@ package com.hufsglobalion.glupshroom.domain.transfer.service;
 
 import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.repository.JourneyRepository;
+import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipHistory;
+import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
+import com.hufsglobalion.glupshroom.domain.ownership.repository.OwnershipHistoryRepository;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.domain.resell.entity.Resell;
@@ -10,6 +13,7 @@ import com.hufsglobalion.glupshroom.domain.transfer.client.OpenAiLetterDraftClie
 import com.hufsglobalion.glupshroom.domain.transfer.dto.request.LetterCreateRequest;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.LetterCreateResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.LetterDraftResponse;
+import com.hufsglobalion.glupshroom.domain.transfer.dto.response.TransferCompleteResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.TransferCreateResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.entity.Transfer;
 import com.hufsglobalion.glupshroom.domain.transfer.entity.TransferLetter;
@@ -18,6 +22,7 @@ import com.hufsglobalion.glupshroom.domain.transfer.repository.TransferLetterRep
 import com.hufsglobalion.glupshroom.domain.transfer.repository.TransferRepository;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-// TODO: 계승 완료(complete) API 구현 시 ownership_history row 생성/갱신 로직 추가 필요.
-// 지금은 이게 없어서 journey-list(BE-#8)의 ownershipStatus, product-lineage(BE-#12)의
-// generations가 항상 기본값/빈 값으로만 나옴.
 public class TransferService {
 
     private static final String TRANSFER_TYPE_RESELL = "resell";
@@ -43,6 +45,7 @@ public class TransferService {
     private final ResellRepository resellRepository;
     private final ProductRepository productRepository;
     private final JourneyRepository journeyRepository;
+    private final OwnershipHistoryRepository ownershipHistoryRepository;
     private final OpenAiLetterDraftClient openAiLetterDraftClient;
 
     public boolean hasOpenedLetter(Long productId, Integer generation) {
@@ -113,6 +116,10 @@ public class TransferService {
             throw new CustomException(ErrorCode.LETTER_CONTENT_REQUIRED);
         }
 
+        if (transferLetterRepository.existsByTransferId(transfer.getId())) {
+            throw new CustomException(ErrorCode.LETTER_ALREADY_WRITTEN);
+        }
+
         TransferLetter letter = TransferLetter.builder()
                 .transferId(transfer.getId())
                 .authorId(request.authorId())
@@ -149,6 +156,88 @@ public class TransferService {
 
         String draft = openAiLetterDraftClient.generateDraft(buildJourneySummary(product, journeys));
         return new LetterDraftResponse(draft);
+    }
+
+    @Transactional
+    public TransferCompleteResponse completeTransfer(Long transferId, Long newOwnerId) {
+        Transfer transfer = getTransfer(transferId);
+
+        if (!newOwnerId.equals(transfer.getToUserId())) {
+            throw new CustomException(ErrorCode.TRANSFER_NEW_OWNER_MISMATCH);
+        }
+
+        if (!isCompletable(transfer)) {
+            throw new CustomException(ErrorCode.TRANSFER_NOT_COMPLETABLE);
+        }
+
+        try {
+            boolean letterOpened = openLetterIfExists(transfer.getId());
+
+            Product product = productRepository.findById(transfer.getProductId())
+                    .orElseThrow(() -> new CustomException(ErrorCode.TRANSFER_COMPLETION_FAILED));
+
+            Integer previousGeneration = product.getCurrentGeneration();
+            closeCurrentOwnership(product.getId(), previousGeneration);
+
+            product.completeTransfer(newOwnerId);
+            openNewOwnership(product.getId(), newOwnerId, product.getCurrentGeneration());
+
+            completeResellIfApplicable(transfer, newOwnerId);
+
+            transfer.complete();
+
+            return TransferCompleteResponse.of(product.getId(), product.getCurrentGeneration(), letterOpened, transfer);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.TRANSFER_COMPLETION_FAILED);
+        }
+    }
+
+    private boolean isCompletable(Transfer transfer) {
+        if (transfer.getTransferStatus() == TransferStatus.APPROVED) {
+            return true;
+        }
+        return transfer.getTransferStatus() == TransferStatus.PENDING
+                && TRANSFER_TYPE_RESELL.equals(transfer.getTransferType());
+    }
+
+    private boolean openLetterIfExists(Long transferId) {
+        return transferLetterRepository.findFirstByTransferIdOrderByIdDesc(transferId)
+                .map(letter -> {
+                    letter.open();
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    private void closeCurrentOwnership(Long productId, Integer currentGeneration) {
+        OwnershipHistory current = ownershipHistoryRepository
+                .findByProductIdAndGeneration(productId, currentGeneration)
+                .orElseThrow(() -> new CustomException(ErrorCode.TRANSFER_COMPLETION_FAILED));
+        current.close(LocalDate.now());
+    }
+
+    private void completeResellIfApplicable(Transfer transfer, Long newOwnerId) {
+        if (!TRANSFER_TYPE_RESELL.equals(transfer.getTransferType())) {
+            return;
+        }
+
+        Resell resell = resellRepository
+                .findByProductIdAndSellerIdAndPostStatus(transfer.getProductId(), transfer.getFromUserId(), "active")
+                .orElseThrow(() -> new CustomException(ErrorCode.TRANSFER_COMPLETION_FAILED));
+        resell.completePurchase(newOwnerId);
+    }
+
+    private void openNewOwnership(Long productId, Long newOwnerId, Integer newGeneration) {
+        OwnershipHistory newOwnership = OwnershipHistory.builder()
+                .productId(productId)
+                .ownerId(newOwnerId)
+                .generation(newGeneration)
+                .ownedFrom(LocalDate.now())
+                .ownershipStatus(OwnershipStatus.OWNING)
+                .build();
+        ownershipHistoryRepository.save(newOwnership);
     }
 
     private Transfer getTransfer(Long transferId) {
