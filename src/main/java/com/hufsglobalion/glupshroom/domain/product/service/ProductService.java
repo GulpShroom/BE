@@ -68,7 +68,7 @@ public class ProductService {
             Store store = product.getStoreId() == null
                     ? null
                     : storeService.findStore(product.getStoreId())
-                    .orElseThrow(() -> new CustomException(ErrorCode.DIGITAL_PASSPORT_RETRIEVAL_FAILED));
+                    .orElse(null);
 
             return new DigitalPassportResponse(
                     product.getId(),
