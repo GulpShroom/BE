@@ -29,6 +29,10 @@ public class OwnershipService {
         return ownershipHistoryRepository.countByProductId(productId);
     }
 
+    public boolean isLineageParticipant(Long productId, Long ownerId) {
+        return ownershipHistoryRepository.existsByProductIdAndOwnerId(productId, ownerId);
+    }
+
     public List<OwnershipHistory> findOwnershipHistories(Long ownerId) {
         return ownershipHistoryRepository.findByOwnerId(ownerId);
     }
