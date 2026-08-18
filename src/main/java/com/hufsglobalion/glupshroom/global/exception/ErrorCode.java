@@ -6,10 +6,11 @@ import org.springframework.http.HttpStatus;
 @Getter
 public enum ErrorCode {
 
-    INVALID_PRODUCT_SCAN_REQUEST(HttpStatus.BAD_REQUEST, "E400", "시리얼 번호 또는 QR 코드가 필요합니다"),
+    INVALID_PRODUCT_SCAN_REQUEST(HttpStatus.BAD_REQUEST, "E400", "시리얼 넘버 또는 QR 코드가 필요합니다"),
     PRODUCT_MASTER_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "제품 정보를 찾을 수 없습니다"),
-    PRODUCT_SCAN_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "제품 확인 중 오류가 발생했습니다"),
+    PRODUCT_SCAN_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "정품 인증 중 오류가 발생했습니다"),
     GENERATION_LETTER_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "해당 세대의 편지를 찾을 수 없습니다"),
+    STORE_LIST_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "매장 정보 조회 중 오류가 발생했습니다"),
 
     UNSUPPORTED_PROFILE_TYPE(HttpStatus.BAD_REQUEST, "E400", "지원하지 않는 프로필 타입입니다"),
     PROFILE_SELECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "프로필 선택 중 오류가 발생했습니다"),
