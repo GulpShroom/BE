@@ -122,4 +122,25 @@ public class ResellService {
 
         return new ResellListResponse(resellPage.getTotalElements(), summaries);
     }
+
+    @Transactional
+    public void deleteResell(Long resellId, Long sellerId) {
+        if (sellerId == null) {
+            throw new CustomException(ErrorCode.RESELL_INVALID_REQUESTER);
+        }
+
+        Resell resell = resellRepository.findById(resellId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESELL_NOT_FOUND));
+
+        if (!resell.getSellerId().equals(sellerId)) {
+            throw new CustomException(ErrorCode.RESELL_DELETE_FORBIDDEN);
+        }
+
+        if (resell.getBuyerId() != null && !"completed".equals(resell.getPostStatus())) {
+            throw new CustomException(ErrorCode.RESELL_TRADE_IN_PROGRESS);
+        }
+
+        resellPhotoRepository.deleteByResellId(resellId);
+        resellRepository.delete(resell);
+    }
 }
