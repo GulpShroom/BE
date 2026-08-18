@@ -3,6 +3,7 @@ package com.hufsglobalion.glupshroom.domain.product.controller;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
@@ -26,6 +27,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
 
     private final ProductService productService;
+
+    @Operation(summary = "디지털 여권 조회", description = "제품의 디지털 여권, 정품 인증, 사양, 구매 정보를 조회합니다.")
+    @GetMapping("/products/{productId}")
+    public ApiResponse<DigitalPassportResponse> getDigitalPassport(@PathVariable Long productId) {
+        DigitalPassportResponse response = productService.getDigitalPassport(productId);
+        return ApiResponse.success("디지털 여권을 조회했습니다", response);
+    }
 
     @Operation(summary = "내 제품 리스트 조회", description = "사용자의 소유 상태별 제품 목록을 조회합니다.")
     @GetMapping("/users/{userId}/products")
