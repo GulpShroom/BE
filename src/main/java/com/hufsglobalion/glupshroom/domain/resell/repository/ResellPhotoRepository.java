@@ -8,4 +8,6 @@ import java.util.List;
 public interface ResellPhotoRepository extends JpaRepository<ResellPhoto, Long> {
 
     List<ResellPhoto> findByResellIdOrderBySortOrder(Long resellId);
+
+    void deleteByResellId(Long resellId);
 }
