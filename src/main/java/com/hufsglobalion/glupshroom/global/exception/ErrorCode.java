@@ -41,7 +41,12 @@ public enum ErrorCode {
     LETTER_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "편지 저장 중 오류가 발생했습니다"),
     LETTER_DRAFT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "초안 생성 중 오류가 발생했습니다"),
 
-    INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다");
+    INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다"),
+
+    TRANSFER_NEW_OWNER_MISMATCH(HttpStatus.FORBIDDEN, "E403", "새 주인 권한이 없습니다"),
+    TRANSFER_NOT_COMPLETABLE(HttpStatus.CONFLICT, "E409", "완료할 수 없는 상태입니다"),
+    TRANSFER_COMPLETION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "이전 완료 중 오류가 발생했습니다(롤백됨)"),
+    LETTER_ALREADY_WRITTEN(HttpStatus.CONFLICT, "E409", "이미 작성된 편지가 있습니다");
 
     private final HttpStatus status;
     private final String code;
