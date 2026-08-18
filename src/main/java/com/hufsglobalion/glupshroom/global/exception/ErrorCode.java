@@ -34,7 +34,9 @@ public enum ErrorCode {
     LETTER_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "편지 작성 권한이 없습니다"),
     TRANSFER_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "이전 요청을 찾을 수 없습니다"),
     LETTER_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "편지 저장 중 오류가 발생했습니다"),
-    LETTER_DRAFT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "초안 생성 중 오류가 발생했습니다");
+    LETTER_DRAFT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "초안 생성 중 오류가 발생했습니다"),
+
+    INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다");
 
     private final HttpStatus status;
     private final String code;
