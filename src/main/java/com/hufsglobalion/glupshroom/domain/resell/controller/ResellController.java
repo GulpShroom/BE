@@ -39,4 +39,14 @@ public class ResellController {
         ResellListResponse response = resellService.getResellList(status, role, userId, page, size);
         return ApiResponse.success("리셀글 목록 조회에 성공했습니다", response);
     }
+
+    @Operation(summary = "리셀글 삭제", description = "본인이 작성한 리셀글을 삭제합니다. 진행 중인 거래가 있으면 삭제할 수 없습니다.")
+    @DeleteMapping("/resells/{resellId}")
+    public ApiResponse<Void> deleteResell(
+            @PathVariable Long resellId,
+            @RequestParam(required = false) Long sellerId
+    ) {
+        resellService.deleteResell(resellId, sellerId);
+        return ApiResponse.success("리셀글 삭제에 성공했습니다", null);
+    }
 }
