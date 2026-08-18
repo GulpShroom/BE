@@ -49,4 +49,9 @@ public class TransferLetter {
         this.aiDraft = aiDraft;
         this.sealed = sealed;
     }
+
+    public void open() {
+        this.sealed = false;
+        this.openedAt = LocalDateTime.now();
+    }
 }
