@@ -102,6 +102,7 @@ public class Journey {
 
     @Builder
     public Journey(Long authorId, Long productId, String photoUrl, String country, String city,
+                   BigDecimal latitude, BigDecimal longitude,
                    Integer journeyYear, Integer journeyMonth, String season,
                    LocalDateTime exifTakenAt,
                    String activityTag, String activitySource,
@@ -115,6 +116,8 @@ public class Journey {
         this.photoUrl = photoUrl;
         this.country = country;
         this.city = city;
+        this.latitude = latitude;
+        this.longitude = longitude;
         this.journeyYear = journeyYear;
         this.journeyMonth = journeyMonth;
         this.season = season;
