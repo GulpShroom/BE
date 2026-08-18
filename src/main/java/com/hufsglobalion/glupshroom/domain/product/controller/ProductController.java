@@ -1,23 +1,27 @@
 package com.hufsglobalion.glupshroom.domain.product.controller;
 
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
+import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrationRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductRegistrationResponse;
 import com.hufsglobalion.glupshroom.domain.product.service.ProductService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Product", description = "제품 API")
@@ -33,6 +37,16 @@ public class ProductController {
     public ApiResponse<DigitalPassportResponse> getDigitalPassport(@PathVariable Long productId) {
         DigitalPassportResponse response = productService.getDigitalPassport(productId);
         return ApiResponse.success("디지털 여권을 조회했습니다", response);
+    }
+
+    @Operation(summary = "디지털 여권 발급", description = "정품 인증된 제품을 등록하고 디지털 여권, 1대 Keeper 소유 이력, 첫 여정을 생성합니다.")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/products")
+    public ApiResponse<ProductRegistrationResponse> registerProduct(
+            @RequestBody ProductRegistrationRequest request
+    ) {
+        ProductRegistrationResponse response = productService.registerProduct(request);
+        return ApiResponse.of("S201", "디지털 여권이 발급되었습니다", response);
     }
 
     @Operation(summary = "내 제품 리스트 조회", description = "사용자의 소유 상태별 제품 목록을 조회합니다.")

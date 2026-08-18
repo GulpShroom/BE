@@ -67,6 +67,11 @@ public class StoreService {
         return storeRepository.findById(storeId);
     }
 
+    public Store getStore(Long storeId) {
+        return storeRepository.findById(storeId)
+                .orElseThrow(() -> new CustomException(ErrorCode.STORE_NOT_FOUND));
+    }
+
     private String normalize(String value) {
         if (value == null || value.isBlank()) {
             return null;

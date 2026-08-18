@@ -1,10 +1,12 @@
 package com.hufsglobalion.glupshroom.domain.product.service;
 
 import com.hufsglobalion.glupshroom.domain.journey.service.JourneyService;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipHistory;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
 import com.hufsglobalion.glupshroom.domain.ownership.service.OwnershipService;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus;
+import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrationRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
@@ -12,6 +14,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListRes
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductRegistrationResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse.Generation;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
@@ -33,6 +36,7 @@ import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -92,6 +96,84 @@ public class ProductService {
         } catch (DataAccessException e) {
             log.error("Digital passport database lookup failed. productId={}", productId, e);
             throw new CustomException(ErrorCode.DIGITAL_PASSPORT_RETRIEVAL_FAILED);
+        }
+    }
+
+    @Transactional
+    public ProductRegistrationResponse registerProduct(ProductRegistrationRequest request) {
+        validateRegistrationRequest(request);
+
+        try {
+            String serialNo = request.serialNo().trim();
+            String nickname = request.nickname().trim();
+
+            userService.getUser(request.ownerId());
+
+            ProductMaster productMaster = productMasterRepository.findById(serialNo)
+                    .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_MASTER_NOT_FOUND));
+
+            if (productRepository.findBySerialNo(serialNo).isPresent()) {
+                throw new CustomException(ErrorCode.PRODUCT_ALREADY_REGISTERED);
+            }
+
+            Store store = request.storeId() == null ? null : storeService.getStore(request.storeId());
+            LocalDate authenticatedAt = LocalDate.now();
+            LocalDateTime createdAt = LocalDateTime.now();
+
+            Product product = Product.builder()
+                    .passportId(createTemporaryPassportId())
+                    .serialNo(productMaster.getSerialNo())
+                    .officialName(productMaster.getOfficialName())
+                    .nickname(nickname)
+                    .officialImageUrl(productMaster.getOfficialImageUrl())
+                    .manufactureYear(productMaster.getManufactureYear())
+                    .productLine(productMaster.getProductLine())
+                    .color(productMaster.getColor())
+                    .authenticated(true)
+                    .authenticatedAt(authenticatedAt)
+                    .purchaseDate(request.purchaseDate())
+                    .storeId(request.storeId())
+                    .currentOwnerId(request.ownerId())
+                    .currentGeneration(1)
+                    .createdAt(createdAt)
+                    .build();
+
+            Product savedProduct = productRepository.saveAndFlush(product);
+            savedProduct.issuePassport(createPassportId(savedProduct.getCreatedAt().toLocalDate(), savedProduct.getId()));
+            productRepository.flush();
+
+            ownershipService.createInitialOwnership(
+                    savedProduct.getId(),
+                    request.ownerId(),
+                    authenticatedAt
+            );
+
+            JourneySaveResponse firstJourney = journeyService.createFirstJourney(
+                    savedProduct.getId(),
+                    request.ownerId(),
+                    savedProduct.getCurrentGeneration(),
+                    request.purchaseDate(),
+                    store != null ? store.getCountry() : null,
+                    store != null ? store.getCity() : null,
+                    store != null ? store.getLatitude() : null,
+                    store != null ? store.getLongitude() : null,
+                    request.firstJourneyMemo()
+            );
+
+            return new ProductRegistrationResponse(
+                    savedProduct.getId(),
+                    savedProduct.getPassportId(),
+                    savedProduct.getSerialNo(),
+                    savedProduct.getNickname(),
+                    savedProduct.getOfficialName(),
+                    savedProduct.getCurrentGeneration(),
+                    toPurchaseInfoStatus(request.purchaseDate(), request.storeId()),
+                    firstJourney.journeyId(),
+                    toKst(savedProduct.getCreatedAt())
+            );
+        } catch (DataAccessException e) {
+            log.error("Digital passport issuance database operation failed", e);
+            throw new CustomException(ErrorCode.PRODUCT_REGISTRATION_FAILED);
         }
     }
 
@@ -197,6 +279,26 @@ public class ProductService {
         }
 
         return "calculating";
+    }
+
+    private void validateRegistrationRequest(ProductRegistrationRequest request) {
+        if (request == null || request.serialNo() == null || request.serialNo().isBlank()
+                || request.nickname() == null || request.nickname().isBlank()
+                || request.ownerId() == null) {
+            throw new CustomException(ErrorCode.PRODUCT_REGISTRATION_REQUIRED_FIELDS);
+        }
+    }
+
+    private String createTemporaryPassportId() {
+        return "TEMP-" + UUID.randomUUID();
+    }
+
+    private String createPassportId(LocalDate issuedDate, Long productId) {
+        return "DP-" + issuedDate.toString().replace("-", "") + "-" + productId;
+    }
+
+    private String toPurchaseInfoStatus(LocalDate purchaseDate, Long storeId) {
+        return purchaseDate != null && storeId != null ? "completed" : "pending";
     }
 
     private String resolveSerialNo(ProductScanRequest request) {
