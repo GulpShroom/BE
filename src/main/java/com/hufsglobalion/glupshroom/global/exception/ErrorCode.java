@@ -49,7 +49,10 @@ public enum ErrorCode {
     CARE_TIP_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 제품의 케어팁을 작성할 권한이 없습니다"),
     CARE_TIP_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "케어팁 작성 중 오류가 발생했습니다"),
 
-    INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다");
+    INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다"),
+
+    RESELL_INVALID_REQUESTER(HttpStatus.BAD_REQUEST, "E400", "요청자 정보를 확인할 수 없습니다"),
+    RESELL_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "본인이 작성한 리셀글만 수정할 수 있습니다");
 
     private final HttpStatus status;
     private final String code;

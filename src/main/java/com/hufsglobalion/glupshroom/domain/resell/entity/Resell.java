@@ -68,4 +68,11 @@ public class Resell {
     public boolean isSelling() {
         return STATUS_ACTIVE.equals(postStatus);
     }
+
+    public void updateDetails(Long price, String conditionGrade, Boolean letterShared, Boolean caretipShared) {
+        if (price != null) this.price = price;
+        if (conditionGrade != null) this.conditionGrade = conditionGrade;
+        if (letterShared != null) this.letterShared = letterShared;
+        if (caretipShared != null) this.caretipShared = caretipShared;
+    }
 }
