@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class Resell {
 
     private static final String STATUS_ACTIVE = "active";
+    private static final String STATUS_COMPLETED = "completed";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -67,5 +68,10 @@ public class Resell {
 
     public boolean isSelling() {
         return STATUS_ACTIVE.equals(postStatus);
+    }
+
+    public void completePurchase(Long buyerId) {
+        this.buyerId = buyerId;
+        this.postStatus = STATUS_COMPLETED;
     }
 }
