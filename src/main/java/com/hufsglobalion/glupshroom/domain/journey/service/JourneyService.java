@@ -196,12 +196,27 @@ public class JourneyService {
         JourneyUpdateRequest.Tags tags = request.tags();
         JourneyUpdateRequest.TagSources tagSources = request.tagSources();
 
+        String activityTag = tags != null ? tags.activity() : null;
+        String activitySource = activityTag != null
+                ? (tagSources != null && tagSources.activity() != null ? tagSources.activity() : "free_text")
+                : null;
+
+        String situationTag = tags != null ? tags.situation() : null;
+        String situationSource = situationTag != null
+                ? (tagSources != null && tagSources.situation() != null ? tagSources.situation() : "free_text")
+                : null;
+
+        String styleTag = tags != null ? tags.style() : null;
+        String styleSource = styleTag != null
+                ? (tagSources != null && tagSources.style() != null ? tagSources.style() : "free_text")
+                : null;
+
         journey.updateDetails(
                 request.country(), request.city(),
                 request.journeyYear(), request.journeyMonth(),
-                tags != null ? tags.activity() : null, tagSources != null ? tagSources.activity() : null,
-                tags != null ? tags.situation() : null, tagSources != null ? tagSources.situation() : null,
-                tags != null ? tags.style() : null, tagSources != null ? tagSources.style() : null,
+                activityTag, activitySource,
+                situationTag, situationSource,
+                styleTag, styleSource,
                 request.recallText(), request.recallTone(), request.userMemo()
         );
 
