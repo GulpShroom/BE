@@ -11,6 +11,8 @@ import com.hufsglobalion.glupshroom.domain.resell.entity.Resell;
 import com.hufsglobalion.glupshroom.domain.resell.entity.ResellPhoto;
 import com.hufsglobalion.glupshroom.domain.resell.repository.ResellPhotoRepository;
 import com.hufsglobalion.glupshroom.domain.resell.repository.ResellRepository;
+import com.hufsglobalion.glupshroom.domain.user.entity.User;
+import com.hufsglobalion.glupshroom.domain.user.repository.UserRepository;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ public class ResellService {
     private final ResellPhotoRepository resellPhotoRepository;
     private final ProductRepository productRepository;
     private final JourneyRepository journeyRepository;
+    private final UserRepository userRepository;
 
     private static final Set<String> VALID_STATUSES = Set.of("active", "completed");
     private static final Set<String> VALID_ROLES = Set.of("seller", "buyer");
@@ -128,12 +131,20 @@ public class ResellService {
     }
 
     @Transactional(readOnly = true)
-    public ResellDetailResponse getResellDetail(Long resellId) {
+    public ResellDetailResponse getResellDetail(Long resellId, Long userId) {
         Resell resell = resellRepository.findById(resellId)
                 .orElseThrow(() -> new CustomException(ErrorCode.RESELL_NOT_FOUND));
 
         Long productId = resell.getProductId();
         Product product = productRepository.findById(productId).orElse(null);
+
+        // 판매자 닉네임 조회
+        String sellerNickname = userRepository.findById(resell.getSellerId())
+                .map(User::getNickname)
+                .orElse(null);
+
+        // 작성자 여부 판단
+        boolean isAuthor = userId != null && resell.getSellerId().equals(userId);
 
         // 실물 사진 목록
         List<ResellPhoto> photos = resellPhotoRepository.findByResellIdOrderBySortOrder(resellId);
@@ -179,6 +190,8 @@ public class ResellService {
         return new ResellDetailResponse(
                 resell.getId(),
                 officialName,
+                sellerNickname,
+                isAuthor,
                 resell.getPrice(),
                 resell.getConditionGrade(),
                 resell.getPostStatus(),
