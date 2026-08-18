@@ -1,6 +1,10 @@
 package com.hufsglobalion.glupshroom.domain.transfer.controller;
 
+import com.hufsglobalion.glupshroom.domain.transfer.dto.request.LetterCreateRequest;
+import com.hufsglobalion.glupshroom.domain.transfer.dto.request.LetterDraftRequest;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.request.TransferCreateRequest;
+import com.hufsglobalion.glupshroom.domain.transfer.dto.response.LetterCreateResponse;
+import com.hufsglobalion.glupshroom.domain.transfer.dto.response.LetterDraftResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.TransferCreateResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.service.TransferService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -9,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,5 +34,26 @@ public class TransferController {
     public ApiResponse<TransferCreateResponse> createTransfer(@RequestBody @Valid TransferCreateRequest request) {
         TransferCreateResponse response = transferService.createResellTransfer(request.resellId(), request.buyerId());
         return ApiResponse.of("S201", "계승이 시작되었습니다", response);
+    }
+
+    @Operation(summary = "계승 편지 작성", description = "전 주인이 다음 주인에게 남길 봉인 편지를 작성합니다.")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/{transferId}/letter")
+    public ApiResponse<LetterCreateResponse> writeLetter(
+            @PathVariable Long transferId,
+            @RequestBody @Valid LetterCreateRequest request
+    ) {
+        LetterCreateResponse response = transferService.writeLetter(transferId, request);
+        return ApiResponse.of("S201", "편지가 봉인되었습니다", response);
+    }
+
+    @Operation(summary = "계승 편지 LLM 초안 생성", description = "여정 데이터를 기반으로 편지 초안을 생성합니다.")
+    @PostMapping("/{transferId}/letter/draft")
+    public ApiResponse<LetterDraftResponse> generateLetterDraft(
+            @PathVariable Long transferId,
+            @RequestBody @Valid LetterDraftRequest request
+    ) {
+        LetterDraftResponse response = transferService.generateLetterDraft(transferId, request.authorId());
+        return ApiResponse.success("편지 초안이 생성되었습니다", response);
     }
 }
