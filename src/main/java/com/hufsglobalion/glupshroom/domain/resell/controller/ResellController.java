@@ -51,6 +51,8 @@ public class ResellController {
     ) {
         ResellUpdateResponse response = resellService.updateResell(resellId, request);
         return ApiResponse.success("리셀글 수정에 성공했습니다", response);
+    }
+
     @Operation(summary = "리셀 상세 조회", description = "구매자 관점에서 리셀글 상세를 조회합니다. 실물 정보는 공개하고, 여정 정보는 요약/티저만 제공합니다.")
     @GetMapping("/resells/{resellId}")
     public ApiResponse<ResellDetailResponse> getResellDetail(

@@ -177,6 +177,11 @@ public class ProductService {
         }
     }
 
+    public Product getProduct(Long productId) {
+        return productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+    }
+
     public MyProductListResponse getMyProductList(Long userId, String statusValue) {
         ProductListStatus status = ProductListStatus.from(statusValue)
                 .orElseThrow(() -> new CustomException(ErrorCode.INVALID_PRODUCT_LIST_STATUS));
