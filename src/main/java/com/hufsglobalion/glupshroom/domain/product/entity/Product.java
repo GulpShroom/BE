@@ -77,4 +77,9 @@ public class Product {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    public void completeTransfer(Long newOwnerId) {
+        this.currentOwnerId = newOwnerId;
+        this.currentGeneration = this.currentGeneration + 1;
+    }
 }
