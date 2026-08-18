@@ -11,6 +11,10 @@ public enum ErrorCode {
     PRODUCT_SCAN_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "정품 인증 중 오류가 발생했습니다"),
     GENERATION_LETTER_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "해당 세대의 편지를 찾을 수 없습니다"),
     STORE_LIST_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "매장 정보 조회 중 오류가 발생했습니다"),
+    STORE_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "요청한 storeId에 해당하는 매장을 찾을 수 없습니다"),
+    PRODUCT_REGISTRATION_REQUIRED_FIELDS(HttpStatus.BAD_REQUEST, "E400", "제품 등록 필수값이 누락되었습니다"),
+    PRODUCT_ALREADY_REGISTERED(HttpStatus.CONFLICT, "E409", "이미 등록된 제품입니다"),
+    PRODUCT_REGISTRATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "디지털 여권 발급 중 오류가 발생했습니다"),
 
     UNSUPPORTED_PROFILE_TYPE(HttpStatus.BAD_REQUEST, "E400", "지원하지 않는 프로필 타입입니다"),
     PROFILE_SELECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "프로필 선택 중 오류가 발생했습니다"),
