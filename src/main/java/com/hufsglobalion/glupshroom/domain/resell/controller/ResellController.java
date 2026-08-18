@@ -51,6 +51,8 @@ public class ResellController {
     ) {
         resellService.deleteResell(resellId, sellerId);
         return ApiResponse.success("리셀글 삭제에 성공했습니다", null);
+    }
+
     @Operation(summary = "리셀글 수정", description = "본인이 작성한 리셀글을 수정합니다. 사진 목록이 포함되면 기존 사진을 교체합니다.")
     @PatchMapping("/resells/{resellId}")
     public ApiResponse<ResellUpdateResponse> updateResell(
@@ -60,7 +62,6 @@ public class ResellController {
         ResellUpdateResponse response = resellService.updateResell(resellId, request);
         return ApiResponse.success("리셀글 수정에 성공했습니다", response);
     }
-}
 
     @Operation(summary = "리셀 상세 조회", description = "구매자 관점에서 리셀글 상세를 조회합니다. 실물 정보는 공개하고, 여정 정보는 요약/티저만 제공합니다.")
     @GetMapping("/resells/{resellId}")
