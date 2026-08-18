@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.resell.controller;
 
 import com.hufsglobalion.glupshroom.domain.resell.dto.request.ResellSaveRequest;
+import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellDetailResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellSaveResponse;
 import com.hufsglobalion.glupshroom.domain.resell.service.ResellService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -24,5 +25,15 @@ public class ResellController {
     public ApiResponse<ResellSaveResponse> saveResell(@RequestBody ResellSaveRequest request) {
         ResellSaveResponse response = resellService.saveResell(request);
         return ApiResponse.of("S201", "리셀글 작성에 성공했습니다", response);
+    }
+
+    @Operation(summary = "리셀 상세 조회", description = "구매자 관점에서 리셀글 상세를 조회합니다. 실물 정보는 공개하고, 여정 정보는 요약/티저만 제공합니다.")
+    @GetMapping("/resells/{resellId}")
+    public ApiResponse<ResellDetailResponse> getResellDetail(
+            @PathVariable Long resellId,
+            @RequestParam(required = false) Long userId
+    ) {
+        ResellDetailResponse response = resellService.getResellDetail(resellId);
+        return ApiResponse.success("리셀 상세 조회에 성공했습니다", response);
     }
 }
