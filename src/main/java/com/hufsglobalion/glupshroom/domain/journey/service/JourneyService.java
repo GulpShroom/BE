@@ -130,6 +130,14 @@ public class JourneyService {
     }
 
     @Transactional(readOnly = true)
+    public List<Journey> findJourneysWithExif(Long productId, Long authorId) {
+        return journeyRepository.findByProductIdAndAuthorIdAndExifTakenAtIsNotNullOrderByExifTakenAtDesc(
+                productId,
+                authorId
+        );
+    }
+
+    @Transactional(readOnly = true)
     public JourneyDetailResponse getJourneyDetail(Long journeyId, Long userId) {
         Journey journey = journeyRepository.findById(journeyId)
                 .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_NOT_FOUND));

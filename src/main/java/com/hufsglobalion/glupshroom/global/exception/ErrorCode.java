@@ -25,6 +25,8 @@ public enum ErrorCode {
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "제품을 찾을 수 없습니다"),
     PRODUCT_OWNER_MISMATCH(HttpStatus.FORBIDDEN, "E403", "해당 제품의 현재 소유자만 여정을 등록할 수 있습니다"),
     JOURNEY_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "여정을 찾을 수 없습니다"),
+    ON_THIS_DAY_USER_ID_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "사용자 ID가 필요합니다"),
+    ON_THIS_DAY_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "온 디스 데이 조회 중 오류가 발생했습니다"),
 
     INVALID_PRODUCT_LIST_STATUS(HttpStatus.BAD_REQUEST, "E400", "소유 상태 조회 조건이 올바르지 않습니다"),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "E404", "사용자를 찾을 수 없습니다"),
@@ -55,10 +57,7 @@ public enum ErrorCode {
     CARE_TIP_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 제품의 케어팁을 작성할 권한이 없습니다"),
     CARE_TIP_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "케어팁 작성 중 오류가 발생했습니다"),
 
-    INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다"),
-
     JOURNEY_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "본인이 작성한 여정만 삭제할 수 있습니다"),
-    RESELL_INVALID_REQUESTER(HttpStatus.BAD_REQUEST, "E400", "요청자 정보를 확인할 수 없습니다"),
     RESELL_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "본인이 작성한 리셀글만 수정할 수 있습니다");
 
     private final HttpStatus status;
