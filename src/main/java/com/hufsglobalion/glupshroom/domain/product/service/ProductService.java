@@ -9,6 +9,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrationRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
@@ -58,6 +59,45 @@ public class ProductService {
     private final JourneyService journeyService;
     private final TransferService transferService;
     private final StoreService storeService;
+
+    public DigitalPassportResponse getDigitalPassport(Long productId) {
+        try {
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+            Store store = product.getStoreId() == null
+                    ? null
+                    : storeService.findStore(product.getStoreId())
+                    .orElse(null);
+
+            return new DigitalPassportResponse(
+                    product.getId(),
+                    product.getPassportId(),
+                    product.getSerialNo(),
+                    product.getNickname(),
+                    product.getOfficialName(),
+                    product.getOfficialImageUrl(),
+                    product.isAuthenticated(),
+                    product.getAuthenticatedAt(),
+                    product.getCurrentGeneration(),
+                    new DigitalPassportResponse.Specification(
+                            product.getManufactureYear(),
+                            product.getProductLine(),
+                            product.getColor()
+                    ),
+                    new DigitalPassportResponse.Purchase(
+                            product.getPurchaseDate(),
+                            product.getStoreId(),
+                            store == null ? null : store.getStoreName(),
+                            store == null ? null : store.getCity(),
+                            store == null ? null : store.getCountry()
+                    )
+            );
+        } catch (DataAccessException e) {
+            log.error("Digital passport database lookup failed. productId={}", productId, e);
+            throw new CustomException(ErrorCode.DIGITAL_PASSPORT_RETRIEVAL_FAILED);
+        }
+    }
 
     @Transactional
     public ProductRegistrationResponse registerProduct(ProductRegistrationRequest request) {

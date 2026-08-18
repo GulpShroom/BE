@@ -6,6 +6,7 @@ import com.hufsglobalion.glupshroom.domain.store.repository.StoreRepository;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -60,6 +61,10 @@ public class StoreService {
             log.error("Store list database lookup failed", e);
             throw new CustomException(ErrorCode.STORE_LIST_RETRIEVAL_FAILED);
         }
+    }
+
+    public Optional<Store> findStore(Long storeId) {
+        return storeRepository.findById(storeId);
     }
 
     public Store getStore(Long storeId) {

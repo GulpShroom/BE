@@ -4,6 +4,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanReques
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrationRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
@@ -30,6 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductController {
 
     private final ProductService productService;
+
+    @Operation(summary = "디지털 여권 조회", description = "제품의 디지털 여권, 정품 인증, 사양, 구매 정보를 조회합니다.")
+    @GetMapping("/products/{productId}")
+    public ApiResponse<DigitalPassportResponse> getDigitalPassport(@PathVariable Long productId) {
+        DigitalPassportResponse response = productService.getDigitalPassport(productId);
+        return ApiResponse.success("디지털 여권을 조회했습니다", response);
+    }
 
     @Operation(summary = "디지털 여권 발급", description = "정품 인증된 제품을 등록하고 디지털 여권, 1대 Keeper 소유 이력, 첫 여정을 생성합니다.")
     @ResponseStatus(HttpStatus.CREATED)
