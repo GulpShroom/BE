@@ -16,6 +16,8 @@ import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneyUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyUpdateResponse;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,6 +42,30 @@ public class JourneyService {
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
         return save(request, metadata);
+    }
+
+    @Transactional
+    public JourneySaveResponse createFirstJourney(Long productId, Long authorId, Integer generation,
+                                                   LocalDate purchaseDate, String country, String city,
+                                                   BigDecimal latitude, BigDecimal longitude, String userMemo) {
+        Journey firstJourney = Journey.builder()
+                .productId(productId)
+                .authorId(authorId)
+                .generation(generation)
+                .firstJourney(true)
+                .country(country)
+                .city(city)
+                .latitude(latitude)
+                .longitude(longitude)
+                .journeyYear(purchaseDate != null ? purchaseDate.getYear() : null)
+                .journeyMonth(purchaseDate != null ? purchaseDate.getMonthValue() : null)
+                .userMemo(userMemo)
+                .verifyStatus("UNVERIFIED")
+                .verifyConfidence(0)
+                .build();
+
+        firstJourney = journeyRepository.save(firstJourney);
+        return new JourneySaveResponse(firstJourney.getId());
     }
 
     protected JourneySaveResponse save(JourneySaveRequest request, PhotoMetadata metadata) {
@@ -101,6 +127,14 @@ public class JourneyService {
     @Transactional(readOnly = true)
     public long countJourneys(Long productId, Long authorId) {
         return journeyRepository.countByProductIdAndAuthorId(productId, authorId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Journey> findJourneysWithExif(Long productId, Long authorId) {
+        return journeyRepository.findByProductIdAndAuthorIdAndExifTakenAtIsNotNullOrderByExifTakenAtDesc(
+                productId,
+                authorId
+        );
     }
 
     @Transactional(readOnly = true)
@@ -235,5 +269,21 @@ public class JourneyService {
                 journey.getRecallTone(),
                 journey.getUserMemo()
         );
+    }
+
+    @Transactional
+    public void deleteJourney(Long journeyId, Long userId) {
+        if (userId == null) {
+            throw new CustomException(ErrorCode.JOURNEY_INVALID_REQUESTER);
+        }
+
+        Journey journey = journeyRepository.findById(journeyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_NOT_FOUND));
+
+        if (!journey.getAuthorId().equals(userId)) {
+            throw new CustomException(ErrorCode.JOURNEY_DELETE_FORBIDDEN);
+        }
+
+        journeyRepository.delete(journey);
     }
 }

@@ -3,6 +3,7 @@ package com.hufsglobalion.glupshroom.domain.ownership.service;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipHistory;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
 import com.hufsglobalion.glupshroom.domain.ownership.repository.OwnershipHistoryRepository;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,10 @@ public class OwnershipService {
         return ownershipHistoryRepository.countByProductId(productId);
     }
 
+    public boolean isLineageParticipant(Long productId, Long ownerId) {
+        return ownershipHistoryRepository.existsByProductIdAndOwnerId(productId, ownerId);
+    }
+
     public List<OwnershipHistory> findOwnershipHistories(Long ownerId) {
         return ownershipHistoryRepository.findByOwnerId(ownerId);
     }
@@ -43,5 +48,18 @@ public class OwnershipService {
                         ownerId,
                         OwnershipStatus.TRANSFERRED
                 );
+    }
+
+    @Transactional
+    public OwnershipHistory createInitialOwnership(Long productId, Long ownerId, LocalDate ownedFrom) {
+        OwnershipHistory ownershipHistory = OwnershipHistory.builder()
+                .productId(productId)
+                .ownerId(ownerId)
+                .generation(1)
+                .ownedFrom(ownedFrom)
+                .ownershipStatus(OwnershipStatus.OWNING)
+                .build();
+
+        return ownershipHistoryRepository.save(ownershipHistory);
     }
 }

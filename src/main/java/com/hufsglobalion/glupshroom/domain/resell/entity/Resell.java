@@ -70,6 +70,13 @@ public class Resell {
         return STATUS_ACTIVE.equals(postStatus);
     }
 
+    public void updateDetails(Long price, String conditionGrade, Boolean letterShared, Boolean caretipShared) {
+        if (price != null) this.price = price;
+        if (conditionGrade != null) this.conditionGrade = conditionGrade;
+        if (letterShared != null) this.letterShared = letterShared;
+        if (caretipShared != null) this.caretipShared = caretipShared;
+    }
+
     public void completePurchase(Long buyerId) {
         this.buyerId = buyerId;
         this.postStatus = STATUS_COMPLETED;

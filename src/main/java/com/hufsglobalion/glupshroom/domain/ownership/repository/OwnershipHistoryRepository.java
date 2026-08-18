@@ -14,6 +14,8 @@ public interface OwnershipHistoryRepository extends JpaRepository<OwnershipHisto
 
     long countByProductId(Long productId);
 
+    boolean existsByProductIdAndOwnerId(Long productId, Long ownerId);
+
     List<OwnershipHistory> findByOwnerId(Long ownerId);
 
     List<OwnershipHistory> findByOwnerIdAndOwnershipStatus(

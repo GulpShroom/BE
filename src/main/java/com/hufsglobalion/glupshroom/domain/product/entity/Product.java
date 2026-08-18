@@ -2,12 +2,16 @@ package com.hufsglobalion.glupshroom.domain.product.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +22,7 @@ import lombok.NoArgsConstructor;
 public class Product {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "product_id")
     private Long id;
 
@@ -81,5 +86,38 @@ public class Product {
     public void completeTransfer(Long newOwnerId) {
         this.currentOwnerId = newOwnerId;
         this.currentGeneration = this.currentGeneration + 1;
+    }
+
+    @Builder
+    private Product(String passportId, String serialNo, String officialName, String nickname,
+                    String officialImageUrl, Integer manufactureYear, String productLine, String color,
+                    boolean authenticated, LocalDate authenticatedAt, LocalDate purchaseDate, Long storeId,
+                    Long currentOwnerId, Integer currentGeneration, LocalDateTime createdAt) {
+        this.passportId = passportId;
+        this.serialNo = serialNo;
+        this.officialName = officialName;
+        this.nickname = nickname;
+        this.officialImageUrl = officialImageUrl;
+        this.manufactureYear = manufactureYear;
+        this.productLine = productLine;
+        this.color = color;
+        this.authenticated = authenticated;
+        this.authenticatedAt = authenticatedAt;
+        this.purchaseDate = purchaseDate;
+        this.storeId = storeId;
+        this.currentOwnerId = currentOwnerId;
+        this.currentGeneration = currentGeneration;
+        this.createdAt = createdAt;
+    }
+
+    public void issuePassport(String passportId) {
+        this.passportId = passportId;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 }

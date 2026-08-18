@@ -4,7 +4,9 @@ import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveReques
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.OnThisDayResponse;
 import com.hufsglobalion.glupshroom.domain.journey.service.JourneyService;
+import com.hufsglobalion.glupshroom.domain.journey.service.OnThisDayService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneyUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyUpdateResponse;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class JourneyController {
 
     private final JourneyService journeyService;
+    private final OnThisDayService onThisDayService;
 
     @Operation(summary = "여정 저장", description = "AI 큐레이터 결과와 사용자 수정값을 받아 여정을 최종 저장합니다.")
     @ResponseStatus(HttpStatus.CREATED)
@@ -54,6 +57,19 @@ public class JourneyController {
         return ApiResponse.success("여정 목록 조회에 성공했습니다", response);
     }
 
+    @Operation(summary = "온 디스 데이 조회", description = "오늘과 같은 월·일에 작성한 본인 과거 여정 1건을 조회합니다.")
+    @GetMapping("/products/{productId}/on-this-day")
+    public ApiResponse<OnThisDayResponse> getOnThisDay(
+            @PathVariable Long productId,
+            @RequestParam(required = false) Long userId
+    ) {
+        OnThisDayResponse response = onThisDayService.getOnThisDay(productId, userId);
+        String message = response.journey() == null
+                ? "오늘 회상할 여정이 없습니다"
+                : "온 디스 데이 여정을 조회했습니다";
+        return ApiResponse.success(message, response);
+    }
+
     @Operation(summary = "여정 수정", description = "저장된 여정을 수정합니다. 본인이 작성한 여정만 수정 가능하며, EXIF로 촬영 날짜가 확인된 경우 시점은 수정할 수 없습니다.")
     @PatchMapping("/journeys/{journeyId}")
     public ApiResponse<JourneyUpdateResponse> updateJourney(
@@ -62,5 +78,15 @@ public class JourneyController {
     ) {
         JourneyUpdateResponse response = journeyService.updateJourney(journeyId, request);
         return ApiResponse.success("여정 수정에 성공했습니다", response);
+    }
+
+    @Operation(summary = "여정 삭제", description = "저장된 여정을 삭제합니다. 본인이 작성한 여정만 삭제 가능합니다.")
+    @DeleteMapping("/journeys/{journeyId}")
+    public ApiResponse<Void> deleteJourney(
+            @PathVariable Long journeyId,
+            @RequestParam(required = false) Long userId
+    ) {
+        journeyService.deleteJourney(journeyId, userId);
+        return ApiResponse.success("여정 삭제에 성공했습니다", null);
     }
 }
