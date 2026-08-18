@@ -47,7 +47,7 @@ public class ResellController {
             @PathVariable Long resellId,
             @RequestParam(required = false) Long userId
     ) {
-        ResellDetailResponse response = resellService.getResellDetail(resellId);
+        ResellDetailResponse response = resellService.getResellDetail(resellId, userId);
         return ApiResponse.success("리셀 상세 조회에 성공했습니다", response);
     }
 }
