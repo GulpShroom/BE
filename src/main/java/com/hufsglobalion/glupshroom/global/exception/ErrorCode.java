@@ -45,6 +45,10 @@ public enum ErrorCode {
     LETTER_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "편지 저장 중 오류가 발생했습니다"),
     LETTER_DRAFT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "초안 생성 중 오류가 발생했습니다"),
 
+    CARE_TIP_CONTENT_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "케어팁 내용을 입력해주세요"),
+    CARE_TIP_WRITE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 제품의 케어팁을 작성할 권한이 없습니다"),
+    CARE_TIP_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "케어팁 작성 중 오류가 발생했습니다"),
+
     INVALID_RESELL_FILTER(HttpStatus.BAD_REQUEST, "E400", "status 또는 role 값이 올바르지 않습니다"),
 
     JOURNEY_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "본인이 작성한 여정만 삭제할 수 있습니다"),

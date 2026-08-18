@@ -166,8 +166,10 @@ public class ResellService {
                 resell.getPrice(),
                 resell.getConditionGrade(),
                 resell.isLetterShared(),
-                resell.isCaretipShared();
-          }
+                resell.isCaretipShared()
+        );
+    }
+
     @Transactional(readOnly = true)
     public ResellDetailResponse getResellDetail(Long resellId, Long userId) {
         Resell resell = resellRepository.findById(resellId)
