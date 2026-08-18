@@ -3,8 +3,10 @@ package com.hufsglobalion.glupshroom.domain.resell.service;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.domain.resell.dto.request.ResellSaveRequest;
+import com.hufsglobalion.glupshroom.domain.resell.dto.request.ResellUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellListResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellSaveResponse;
+import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellUpdateResponse;
 import com.hufsglobalion.glupshroom.domain.resell.entity.Resell;
 import com.hufsglobalion.glupshroom.domain.resell.entity.ResellPhoto;
 import com.hufsglobalion.glupshroom.domain.resell.repository.ResellPhotoRepository;
@@ -121,5 +123,43 @@ public class ResellService {
                 .toList();
 
         return new ResellListResponse(resellPage.getTotalElements(), summaries);
+    }
+
+    @Transactional
+    public ResellUpdateResponse updateResell(Long resellId, ResellUpdateRequest request) {
+        if (request.sellerId() == null) {
+            throw new CustomException(ErrorCode.RESELL_INVALID_REQUESTER);
+        }
+
+        Resell resell = resellRepository.findById(resellId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESELL_NOT_FOUND));
+
+        if (!resell.getSellerId().equals(request.sellerId())) {
+            throw new CustomException(ErrorCode.RESELL_UPDATE_FORBIDDEN);
+        }
+
+        resell.updateDetails(request.price(), request.conditionGrade(), request.letterShared(), request.caretipShared());
+
+        // 사진 목록이 포함된 경우 기존 삭제 후 새로 저장
+        if (request.photoUrls() != null) {
+            resellPhotoRepository.deleteByResellId(resellId);
+            List<ResellPhoto> photos = new java.util.ArrayList<>();
+            for (int i = 0; i < request.photoUrls().size(); i++) {
+                photos.add(ResellPhoto.builder()
+                        .resellId(resellId)
+                        .photoUrl(request.photoUrls().get(i))
+                        .sortOrder(i)
+                        .build());
+            }
+            resellPhotoRepository.saveAll(photos);
+        }
+
+        return new ResellUpdateResponse(
+                resell.getId(),
+                resell.getPrice(),
+                resell.getConditionGrade(),
+                resell.isLetterShared(),
+                resell.isCaretipShared()
+        );
     }
 }
