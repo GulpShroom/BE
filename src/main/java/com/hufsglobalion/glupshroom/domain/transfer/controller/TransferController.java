@@ -2,9 +2,11 @@ package com.hufsglobalion.glupshroom.domain.transfer.controller;
 
 import com.hufsglobalion.glupshroom.domain.transfer.dto.request.LetterCreateRequest;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.request.LetterDraftRequest;
+import com.hufsglobalion.glupshroom.domain.transfer.dto.request.TransferCompleteRequest;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.request.TransferCreateRequest;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.LetterCreateResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.LetterDraftResponse;
+import com.hufsglobalion.glupshroom.domain.transfer.dto.response.TransferCompleteResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.TransferCreateResponse;
 import com.hufsglobalion.glupshroom.domain.transfer.service.TransferService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -55,5 +57,15 @@ public class TransferController {
     ) {
         LetterDraftResponse response = transferService.generateLetterDraft(transferId, request.authorId());
         return ApiResponse.success("편지 초안이 생성되었습니다", response);
+    }
+
+    @Operation(summary = "소유권 이전 완료", description = "새 주인 등록으로 소유권 이전(계승)을 최종 완료합니다.")
+    @PostMapping("/{transferId}/complete")
+    public ApiResponse<TransferCompleteResponse> completeTransfer(
+            @PathVariable Long transferId,
+            @RequestBody @Valid TransferCompleteRequest request
+    ) {
+        TransferCompleteResponse response = transferService.completeTransfer(transferId, request.newOwnerId());
+        return ApiResponse.success("대물림이 이어졌습니다", response);
     }
 }
