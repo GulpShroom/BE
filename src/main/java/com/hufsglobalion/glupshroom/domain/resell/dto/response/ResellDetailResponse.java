@@ -5,6 +5,8 @@ import java.util.List;
 public record ResellDetailResponse(
         Long resellId,
         String officialName,
+        String sellerNickname,
+        boolean isAuthor,
         Long price,
         String conditionGrade,
         String postStatus,
