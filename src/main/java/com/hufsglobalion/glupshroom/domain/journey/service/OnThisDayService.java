@@ -49,13 +49,15 @@ public class OnThisDayService {
                 return noJourney(baseDate);
             }
 
+            String city = journey.getCity() != null ? journey.getCity() : journey.getCountry();
+
             return new OnThisDayResponse(
                     null,
                     new OnThisDayJourney(
                             journey.getId(),
                             baseDate.getYear() - journey.getExifTakenAt().getYear(),
                             journey.getCountry(),
-                            journey.getCity(),
+                            city,
                             journey.getRecallText(),
                             journey.getPhotoUrl()
                     )

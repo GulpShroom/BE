@@ -44,13 +44,18 @@ public class OwnershipHistory {
     private OwnershipStatus ownershipStatus;
 
     @Builder
-    private OwnershipHistory(Long productId, Long ownerId, Integer generation, LocalDate ownedFrom,
-                             LocalDate ownedTo, OwnershipStatus ownershipStatus) {
+    private OwnershipHistory(Long productId, Long ownerId, Integer generation, LocalDate ownedFrom,LocalDate ownedTo,
+                              OwnershipStatus ownershipStatus) {
         this.productId = productId;
         this.ownerId = ownerId;
         this.generation = generation;
         this.ownedFrom = ownedFrom;
         this.ownedTo = ownedTo;
         this.ownershipStatus = ownershipStatus;
+    }
+
+    public void close(LocalDate ownedTo) {
+        this.ownedTo = ownedTo;
+        this.ownershipStatus = OwnershipStatus.TRANSFERRED;
     }
 }

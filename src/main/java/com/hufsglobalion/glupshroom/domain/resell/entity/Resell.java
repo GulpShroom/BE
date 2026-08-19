@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 public class Resell {
 
     private static final String STATUS_ACTIVE = "active";
+    private static final String STATUS_COMPLETED = "completed";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,5 +75,14 @@ public class Resell {
         if (conditionGrade != null) this.conditionGrade = conditionGrade;
         if (letterShared != null) this.letterShared = letterShared;
         if (caretipShared != null) this.caretipShared = caretipShared;
+    }
+
+    public void completePurchase(Long buyerId) {
+        this.buyerId = buyerId;
+        this.postStatus = STATUS_COMPLETED;
+    }
+
+    public void assignBuyer(Long buyerId) {
+        this.buyerId = buyerId;
     }
 }
