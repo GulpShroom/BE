@@ -101,6 +101,8 @@ public class TransferService {
                 .build();
 
         Transfer saved = transferRepository.save(transfer);
+        resell.assignBuyer(buyerId);
+
         return TransferCreateResponse.from(saved);
     }
 
