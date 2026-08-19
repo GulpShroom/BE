@@ -5,6 +5,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrati
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.JourneyMapResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
@@ -88,5 +89,17 @@ public class ProductController {
     ) {
         GenerationLetterResponse response = productService.getGenerationLetter(productId, generation);
         return ApiResponse.success("대별 편지를 조회했습니다", response);
+    }
+
+    @Operation(summary = "여정 지도 조회", description = "제품의 여정을 지도 마커/집계로 조회합니다. 요청자 권한에 따라 노출 필드가 달라집니다.")
+    @GetMapping("/products/{productId}/map")
+    public ApiResponse<JourneyMapResponse> getJourneyMap(
+            @PathVariable Long productId,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(defaultValue = "world") String zoom,
+            @RequestParam(required = false) Integer generation
+    ) {
+        JourneyMapResponse response = productService.getJourneyMap(productId, userId, zoom, generation);
+        return ApiResponse.success("여정 지도를 조회했습니다", response);
     }
 }
