@@ -7,26 +7,34 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
 public class PhotoMetadataExtractor {
 
-    private final RestClient restClient;
+    private static final String GEOCODE_BASE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
 
-    public PhotoMetadataExtractor() {
+    private final RestClient restClient;
+    private final String googleMapsApiKey;
+
+    public PhotoMetadataExtractor(@Value("${google.maps.api-key:}") String googleMapsApiKey) {
+        this.googleMapsApiKey = googleMapsApiKey;
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(3000);
         factory.setReadTimeout(3000);
@@ -80,28 +88,89 @@ public class PhotoMetadataExtractor {
         };
     }
 
+    public Optional<Coordinates> geocode(String query) {
+        if (query == null || query.isBlank()) {
+            return Optional.empty();
+        }
+
+        try {
+            Map<String, Object> response = restClient.get()
+                    .uri(GEOCODE_BASE_URL + "?address={query}&key={key}", query, googleMapsApiKey)
+                    .retrieve()
+                    .body(Map.class);
+
+            Map<String, Object> result = firstResult(response);
+            if (result == null) {
+                return Optional.empty();
+            }
+
+            if (!(result.get("geometry") instanceof Map<?, ?> geometry)) {
+                return Optional.empty();
+            }
+            if (!(geometry.get("location") instanceof Map<?, ?> location)) {
+                return Optional.empty();
+            }
+
+            BigDecimal latitude = new BigDecimal(location.get("lat").toString());
+            BigDecimal longitude = new BigDecimal(location.get("lng").toString());
+            return Optional.of(new Coordinates(latitude, longitude));
+        } catch (Exception e) {
+            log.warn("지오코딩 실패: query={}, {}", query, e.getMessage());
+            return Optional.empty();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, String> reverseGeocode(double lat, double lon) {
         try {
             Map<String, Object> response = restClient.get()
-                    .uri("https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}&zoom=10&addressdetails=1", lat, lon)
-                    .header("User-Agent", "glupshroom-app")
+                    .uri(GEOCODE_BASE_URL + "?latlng={lat},{lon}&language=ko&key={key}", lat, lon, googleMapsApiKey)
                     .retrieve()
                     .body(Map.class);
 
-            Map<String, String> result = new HashMap<>();
-            if (response != null && response.get("address") instanceof Map<?, ?> address) {
-                Object countryVal = address.get("country");
-                Object cityVal = address.get("city");
-                if (cityVal == null) cityVal = address.get("town");
-                if (cityVal == null) cityVal = address.get("village");
-                if (countryVal != null) result.put("country", countryVal.toString());
-                if (cityVal != null) result.put("city", cityVal.toString());
+            Map<String, Object> result = firstResult(response);
+            if (result == null || !(result.get("address_components") instanceof List<?> components)) {
+                return Map.of();
             }
-            return result;
+
+            Map<String, String> address = new HashMap<>();
+            String country = extractComponent(components, "country");
+            String city = extractComponent(components, "locality");
+            if (city == null) {
+                city = extractComponent(components, "administrative_area_level_2");
+            }
+            if (city == null) {
+                city = extractComponent(components, "administrative_area_level_1");
+            }
+            if (country != null) address.put("country", country);
+            if (city != null) address.put("city", city);
+            return address;
         } catch (Exception e) {
             log.warn("역지오코딩 실패: {}", e.getMessage());
             return Map.of();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> firstResult(Map<String, Object> response) {
+        if (response == null || !"OK".equals(response.get("status"))) {
+            return null;
+        }
+        if (!(response.get("results") instanceof List<?> results) || results.isEmpty()) {
+            return null;
+        }
+        return (Map<String, Object>) results.get(0);
+    }
+
+    private String extractComponent(List<?> components, String type) {
+        for (Object componentObj : components) {
+            if (componentObj instanceof Map<?, ?> component
+                    && component.get("types") instanceof List<?> types
+                    && types.contains(type)) {
+                Object longName = component.get("long_name");
+                return longName != null ? longName.toString() : null;
+            }
+        }
+        return null;
     }
 }
