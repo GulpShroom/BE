@@ -25,6 +25,8 @@ public interface JourneyRepository extends JpaRepository<Journey, Long> {
 
     List<Journey> findByProductId(Long productId);
 
+    List<Journey> findByProductIdAndGeneration(Long productId, Integer generation);
+
     @Query("SELECT COUNT(DISTINCT j.generation) FROM Journey j WHERE j.productId = :productId")
     long countDistinctGenerationByProductId(@Param("productId") Long productId);
 
