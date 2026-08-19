@@ -1,5 +1,6 @@
 package com.hufsglobalion.glupshroom.domain.product.service;
 
+import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.service.JourneyService;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipHistory;
@@ -10,6 +11,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrati
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.JourneyMapResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
@@ -35,8 +37,11 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -51,6 +56,12 @@ public class ProductService {
 
     private static final ZoneOffset KST_OFFSET = ZoneOffset.ofHours(9);
     private static final long MINIMUM_JOURNEY_COUNT_FOR_PROVENANCE = 3L;
+    private static final List<String> VALID_MAP_ZOOMS = List.of("world", "country", "district");
+    private static final String MAP_ZOOM_DEFAULT = "world";
+    private static final String MAP_ZOOM_DISTRICT = "district";
+    private static final String VIEWER_ROLE_OWNER = "owner";
+    private static final String VIEWER_ROLE_LINEAGE = "lineage";
+    private static final String VIEWER_ROLE_VISITOR = "visitor";
 
     private final ProductRepository productRepository;
     private final ProductMasterRepository productMasterRepository;
@@ -272,6 +283,73 @@ public class ProductService {
                 letter.getContent(),
                 toKst(letter.getOpenedAt())
         );
+    }
+
+    public JourneyMapResponse getJourneyMap(Long productId, Long userId, String zoomValue, Integer generation) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        try {
+            String zoom = VALID_MAP_ZOOMS.contains(zoomValue) ? zoomValue : MAP_ZOOM_DEFAULT;
+            String viewerRole = resolveViewerRole(product, userId);
+            List<Journey> journeys = journeyService.findJourneys(productId, generation);
+
+            if (MAP_ZOOM_DISTRICT.equals(zoom)) {
+                List<JourneyMapResponse.Marker> markers = journeys.stream()
+                        .map(journey -> toMarker(journey, product, userId))
+                        .toList();
+                return new JourneyMapResponse(viewerRole, zoom, markers, null);
+            }
+
+            return new JourneyMapResponse(viewerRole, zoom, List.of(), toAggregates(journeys, zoom));
+        } catch (Exception e) {
+            log.error("Journey map retrieval failed. productId={}", productId, e);
+            throw new CustomException(ErrorCode.JOURNEY_MAP_RETRIEVAL_FAILED);
+        }
+    }
+
+    private String resolveViewerRole(Product product, Long userId) {
+        if (userId == null) {
+            return VIEWER_ROLE_VISITOR;
+        }
+        if (product.getCurrentOwnerId().equals(userId)) {
+            return VIEWER_ROLE_OWNER;
+        }
+        if (ownershipService.isLineageParticipant(product.getId(), userId)) {
+            return VIEWER_ROLE_LINEAGE;
+        }
+        return VIEWER_ROLE_VISITOR;
+    }
+
+    private JourneyMapResponse.Marker toMarker(Journey journey, Product product, Long userId) {
+        boolean isOwn = userId != null && journey.getAuthorId().equals(userId);
+        String thumbnailUrl = isOwn ? journey.getPhotoUrl() : product.getOfficialImageUrl();
+        String verifyStatus = journey.getVerifyStatus() == null ? null : journey.getVerifyStatus().toLowerCase();
+
+        return new JourneyMapResponse.Marker(
+                journey.getId(),
+                journey.getGeneration(),
+                isOwn,
+                journey.getCity(),
+                journey.getLatitude() == null ? null : journey.getLatitude().doubleValue(),
+                journey.getLongitude() == null ? null : journey.getLongitude().doubleValue(),
+                thumbnailUrl,
+                journey.getRecallText(),
+                verifyStatus
+        );
+    }
+
+    private List<JourneyMapResponse.Aggregate> toAggregates(List<Journey> journeys, String zoom) {
+        Function<Journey, String> regionExtractor = MAP_ZOOM_DEFAULT.equals(zoom) ? Journey::getCountry : Journey::getCity;
+
+        return journeys.stream()
+                .map(regionExtractor)
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> new JourneyMapResponse.Aggregate(entry.getKey(), entry.getValue()))
+                .sorted(Comparator.comparing(JourneyMapResponse.Aggregate::region))
+                .toList();
     }
 
     private String getProvenanceStatus(Integer provenanceScore, long journeyCount) {
