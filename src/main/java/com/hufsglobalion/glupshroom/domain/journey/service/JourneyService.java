@@ -6,6 +6,7 @@ import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListRespo
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.repository.JourneyRepository;
+import com.hufsglobalion.glupshroom.domain.journey.util.Coordinates;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadata;
 import com.hufsglobalion.glupshroom.domain.journey.util.PhotoMetadataExtractor;
 import com.hufsglobalion.glupshroom.domain.ownership.repository.OwnershipHistoryRepository;
@@ -87,6 +88,8 @@ public class JourneyService {
         String verifyStatus = hasExif ? "VERIFIED" : "UNVERIFIED";
         Integer verifyConfidence = hasExif ? 1 : 0;
 
+        Coordinates coordinates = resolveCoordinates(city, country);
+
         JourneySaveRequest.Tags tags = request.tags();
         JourneySaveRequest.TagSources tagSources = request.tagSources();
 
@@ -96,6 +99,8 @@ public class JourneyService {
                 .photoUrl(request.photoUrl())
                 .country(country)
                 .city(city)
+                .latitude(coordinates.latitude())
+                .longitude(coordinates.longitude())
                 .journeyYear(journeyYear)
                 .journeyMonth(journeyMonth)
                 .season(metadata.season())
@@ -119,6 +124,22 @@ public class JourneyService {
         return new JourneySaveResponse(saved.getId());
     }
 
+    private Coordinates resolveCoordinates(String city, String country) {
+        if (city != null) {
+            return photoMetadataExtractor.geocode(buildGeocodeQuery(city, country))
+                    .orElse(Coordinates.EMPTY);
+        }
+        if (country != null) {
+            return photoMetadataExtractor.geocode(country)
+                    .orElse(Coordinates.EMPTY);
+        }
+        return Coordinates.EMPTY;
+    }
+
+    private String buildGeocodeQuery(String city, String country) {
+        return country != null ? city + ", " + country : city;
+    }
+
     @Transactional(readOnly = true)
     public long countJourneys(Long productId) {
         return journeyRepository.countByProductId(productId);
@@ -127,6 +148,13 @@ public class JourneyService {
     @Transactional(readOnly = true)
     public long countJourneys(Long productId, Long authorId) {
         return journeyRepository.countByProductIdAndAuthorId(productId, authorId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Journey> findJourneys(Long productId, Integer generation) {
+        return generation != null
+                ? journeyRepository.findByProductIdAndGeneration(productId, generation)
+                : journeyRepository.findByProductId(productId);
     }
 
     @Transactional(readOnly = true)
