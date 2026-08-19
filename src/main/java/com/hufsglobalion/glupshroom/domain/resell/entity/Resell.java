@@ -81,4 +81,8 @@ public class Resell {
         this.buyerId = buyerId;
         this.postStatus = STATUS_COMPLETED;
     }
+
+    public void assignBuyer(Long buyerId) {
+        this.buyerId = buyerId;
+    }
 }
