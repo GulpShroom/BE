@@ -63,7 +63,9 @@ public enum ErrorCode {
     TRANSFER_NEW_OWNER_MISMATCH(HttpStatus.FORBIDDEN, "E403", "새 주인 권한이 없습니다"),
     TRANSFER_NOT_COMPLETABLE(HttpStatus.CONFLICT, "E409", "완료할 수 없는 상태입니다"),
     TRANSFER_COMPLETION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "이전 완료 중 오류가 발생했습니다(롤백됨)"),
-    LETTER_ALREADY_WRITTEN(HttpStatus.CONFLICT, "E409", "이미 작성된 편지가 있습니다");
+    LETTER_ALREADY_WRITTEN(HttpStatus.CONFLICT, "E409", "이미 작성된 편지가 있습니다"),
+
+    JOURNEY_MAP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "지도 조회 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;
