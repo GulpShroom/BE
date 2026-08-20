@@ -68,9 +68,7 @@ public enum ErrorCode {
     JOURNEY_MAP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "지도 조회 중 오류가 발생했습니다"),
 
     FILE_UPLOAD_INVALID(HttpStatus.BAD_REQUEST, "E400", "지원하지 않는 파일 형식입니다"),
-    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "파일 업로드 중 오류가 발생했습니다");
-    JOURNEY_MAP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "지도 조회 중 오류가 발생했습니다"),
-
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "파일 업로드 중 오류가 발생했습니다"),
     JOURNEY_ANALYSIS_IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "이미지 파일이 필요합니다"),
     JOURNEY_ANALYSIS_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 제품의 소유자가 아닙니다"),
     JOURNEY_ANALYSIS_FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "E413", "파일 용량이 제한을 초과했습니다"),
