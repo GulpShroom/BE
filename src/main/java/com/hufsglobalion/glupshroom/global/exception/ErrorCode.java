@@ -75,7 +75,10 @@ public enum ErrorCode {
     JOURNEY_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "AI 분석 중 오류가 발생했습니다"),
 
     DIAGNOSIS_PHOTO_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "진단할 사진이 필요합니다"),
-    DIAGNOSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "상태 진단 중 오류가 발생했습니다");
+    DIAGNOSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "상태 진단 중 오류가 발생했습니다"),
+
+    RESELL_INHERIT_PREVIEW_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 리셀글의 작성자가 아닙니다"),
+    RESELL_INHERIT_PREVIEW_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "미리보기 조회 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;
