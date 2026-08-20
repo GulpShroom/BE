@@ -1,11 +1,13 @@
 package com.hufsglobalion.glupshroom.domain.resell.service;
 
+import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.repository.JourneyRepository;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.domain.resell.dto.request.ResellSaveRequest;
 import com.hufsglobalion.glupshroom.domain.resell.dto.request.ResellUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellDetailResponse;
+import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellInheritPreviewResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellListResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellSaveResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellUpdateResponse;
@@ -41,6 +43,9 @@ public class ResellService {
 
     private static final Set<String> VALID_STATUSES = Set.of("active", "completed");
     private static final Set<String> VALID_ROLES = Set.of("seller", "buyer");
+    private static final String TAG_SOURCE_FREE_TEXT = "free_text";
+    private static final String VERIFY_STATUS_VERIFIED = "VERIFIED";
+    private static final int SAMPLE_CITY_LIMIT = 2;
 
     @Transactional
     public ResellSaveResponse saveResell(ResellSaveRequest request) {
@@ -259,6 +264,80 @@ public class ResellService {
                 photoDetails,
                 summary,
                 lockedJourney
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public ResellInheritPreviewResponse getInheritPreview(Long resellId, Long userId) {
+        Resell resell = resellRepository.findById(resellId)
+                .orElseThrow(() -> new CustomException(ErrorCode.RESELL_NOT_FOUND));
+
+        if (!resell.getSellerId().equals(userId)) {
+            throw new CustomException(ErrorCode.RESELL_INHERIT_PREVIEW_FORBIDDEN);
+        }
+
+        try {
+            List<Journey> journeys = journeyRepository.findByProductId(resell.getProductId());
+
+            ResellInheritPreviewResponse.AutoInherit autoInherit = buildAutoInherit(journeys);
+
+            // 자유텍스트 수정은 각 소유자의 사적 수정이라, 판매자 본인이 작성한 여정에 한해서만
+            // "계승 여부를 선택"할 수 있게 함 (앞 세대가 남긴 자유텍스트를 현재 판매자가 대신 정할 수 없음)
+            List<ResellInheritPreviewResponse.SelectableItem> selectableItems = journeys.stream()
+                    .filter(journey -> journey.getAuthorId().equals(userId))
+                    .map(this::toSelectableItem)
+                    .filter(item -> !item.modifiedTags().isEmpty())
+                    .toList();
+
+            return new ResellInheritPreviewResponse(autoInherit, selectableItems);
+        } catch (CustomException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CustomException(ErrorCode.RESELL_INHERIT_PREVIEW_FAILED);
+        }
+    }
+
+    private ResellInheritPreviewResponse.AutoInherit buildAutoInherit(List<Journey> journeys) {
+        int journeyCount = journeys.size();
+
+        String sampleRecall = journeys.stream()
+                .map(Journey::getRecallText)
+                .filter(java.util.Objects::nonNull)
+                .findFirst()
+                .orElse(null);
+
+        List<String> distinctCities = journeys.stream()
+                .map(Journey::getCity)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        List<String> sampleCities = distinctCities.stream().limit(SAMPLE_CITY_LIMIT).toList();
+        int cityMoreCount = Math.max(0, distinctCities.size() - sampleCities.size());
+
+        long verifiedCount = journeys.stream()
+                .filter(journey -> VERIFY_STATUS_VERIFIED.equals(journey.getVerifyStatus()))
+                .count();
+        int verifiedRatio = journeyCount == 0 ? 0 : (int) (verifiedCount * 100 / journeyCount);
+
+        return new ResellInheritPreviewResponse.AutoInherit(
+                journeyCount, sampleRecall, sampleCities, cityMoreCount, verifiedRatio
+        );
+    }
+
+    private ResellInheritPreviewResponse.SelectableItem toSelectableItem(Journey journey) {
+        List<ResellInheritPreviewResponse.ModifiedTag> modifiedTags = new java.util.ArrayList<>();
+        if (TAG_SOURCE_FREE_TEXT.equals(journey.getActivitySource()) && journey.getActivityTag() != null) {
+            modifiedTags.add(new ResellInheritPreviewResponse.ModifiedTag("activity", journey.getActivityTag()));
+        }
+        if (TAG_SOURCE_FREE_TEXT.equals(journey.getSituationSource()) && journey.getSituationTag() != null) {
+            modifiedTags.add(new ResellInheritPreviewResponse.ModifiedTag("situation", journey.getSituationTag()));
+        }
+        if (TAG_SOURCE_FREE_TEXT.equals(journey.getStyleSource()) && journey.getStyleTag() != null) {
+            modifiedTags.add(new ResellInheritPreviewResponse.ModifiedTag("style", journey.getStyleTag()));
+        }
+
+        return new ResellInheritPreviewResponse.SelectableItem(
+                journey.getId(), journey.getCity(), journey.getJourneyYear(), journey.getRecallText(), modifiedTags
         );
     }
 }

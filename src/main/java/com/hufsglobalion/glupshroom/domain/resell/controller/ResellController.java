@@ -3,6 +3,7 @@ package com.hufsglobalion.glupshroom.domain.resell.controller;
 import com.hufsglobalion.glupshroom.domain.resell.dto.request.ResellSaveRequest;
 import com.hufsglobalion.glupshroom.domain.resell.dto.request.ResellUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellDetailResponse;
+import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellInheritPreviewResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellListResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellSaveResponse;
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellUpdateResponse;
@@ -71,5 +72,15 @@ public class ResellController {
     ) {
         ResellDetailResponse response = resellService.getResellDetail(resellId, userId);
         return ApiResponse.success("리셀 상세 조회에 성공했습니다", response);
+    }
+
+    @Operation(summary = "계승 여정 미리보기", description = "리셀글 작성 시 새 주인에게 계승될 여정을 자동 계승분/선택 계승분으로 구분해 미리보기로 조회합니다.")
+    @GetMapping("/resells/{resellId}/inherit-preview")
+    public ApiResponse<ResellInheritPreviewResponse> getInheritPreview(
+            @PathVariable Long resellId,
+            @RequestParam Long userId
+    ) {
+        ResellInheritPreviewResponse response = resellService.getInheritPreview(resellId, userId);
+        return ApiResponse.success("계승 미리보기를 조회했습니다", response);
     }
 }
