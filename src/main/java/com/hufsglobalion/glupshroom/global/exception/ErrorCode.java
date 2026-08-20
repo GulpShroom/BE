@@ -65,7 +65,10 @@ public enum ErrorCode {
     TRANSFER_COMPLETION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "이전 완료 중 오류가 발생했습니다(롤백됨)"),
     LETTER_ALREADY_WRITTEN(HttpStatus.CONFLICT, "E409", "이미 작성된 편지가 있습니다"),
 
-    JOURNEY_MAP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "지도 조회 중 오류가 발생했습니다");
+    JOURNEY_MAP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "지도 조회 중 오류가 발생했습니다"),
+
+    FILE_UPLOAD_INVALID(HttpStatus.BAD_REQUEST, "E400", "지원하지 않는 파일 형식입니다"),
+    FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "파일 업로드 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;
