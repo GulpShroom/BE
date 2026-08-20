@@ -13,8 +13,10 @@ import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellSaveRespons
 import com.hufsglobalion.glupshroom.domain.resell.dto.response.ResellUpdateResponse;
 import com.hufsglobalion.glupshroom.domain.resell.entity.Resell;
 import com.hufsglobalion.glupshroom.domain.resell.entity.ResellPhoto;
+import com.hufsglobalion.glupshroom.domain.resell.entity.ResellSelectedTag;
 import com.hufsglobalion.glupshroom.domain.resell.repository.ResellPhotoRepository;
 import com.hufsglobalion.glupshroom.domain.resell.repository.ResellRepository;
+import com.hufsglobalion.glupshroom.domain.resell.repository.ResellSelectedTagRepository;
 import com.hufsglobalion.glupshroom.domain.user.entity.User;
 import com.hufsglobalion.glupshroom.domain.user.repository.UserRepository;
 import com.hufsglobalion.glupshroom.global.exception.CustomException;
@@ -29,7 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,12 +41,14 @@ public class ResellService {
 
     private final ResellRepository resellRepository;
     private final ResellPhotoRepository resellPhotoRepository;
+    private final ResellSelectedTagRepository resellSelectedTagRepository;
     private final ProductRepository productRepository;
     private final JourneyRepository journeyRepository;
     private final UserRepository userRepository;
 
     private static final Set<String> VALID_STATUSES = Set.of("active", "completed");
     private static final Set<String> VALID_ROLES = Set.of("seller", "buyer");
+    private static final Set<String> VALID_TAG_TYPES = Set.of("activity", "situation", "style");
     private static final String TAG_SOURCE_FREE_TEXT = "free_text";
     private static final String VERIFY_STATUS_VERIFIED = "VERIFIED";
     private static final int SAMPLE_CITY_LIMIT = 2;
@@ -82,6 +88,10 @@ public class ResellService {
                         .build());
             }
             resellPhotoRepository.saveAll(photos);
+        }
+
+        if (request.selectedTags() != null && !request.selectedTags().isEmpty()) {
+            saveSelectedTags(saved.getId(), request.selectedTags(), request.sellerId());
         }
 
         return new ResellSaveResponse(
@@ -246,9 +256,10 @@ public class ResellService {
         List<String> cities = journeyRepository.findDistinctCitiesByProductId(productId);
         boolean hasLetter = resell.isLetterShared();
         boolean hasCareTip = resell.isCaretipShared();
+        boolean hasSelectedTags = resellSelectedTagRepository.existsByResellId(resellId);
 
         ResellDetailResponse.LockedJourney lockedJourney = new ResellDetailResponse.LockedJourney(
-                cities, countryCount, cityCount, hasLetter, hasCareTip
+                cities, countryCount, cityCount, hasLetter, hasCareTip, hasSelectedTags
         );
 
         String officialName = product != null ? product.getOfficialName() : null;
@@ -339,5 +350,45 @@ public class ResellService {
         return new ResellInheritPreviewResponse.SelectableItem(
                 journey.getId(), journey.getCity(), journey.getJourneyYear(), journey.getRecallText(), modifiedTags
         );
+    }
+
+    private void saveSelectedTags(Long resellId, List<ResellSaveRequest.SelectedTag> selectedTags, Long sellerId) {
+        List<Long> journeyIds = selectedTags.stream()
+                .map(ResellSaveRequest.SelectedTag::journeyId)
+                .distinct()
+                .toList();
+        Map<Long, Journey> journeysById = journeyRepository.findAllById(journeyIds).stream()
+                .collect(Collectors.toMap(Journey::getId, journey -> journey));
+
+        List<ResellSelectedTag> selected = selectedTags.stream()
+                .map(tag -> {
+                    if (!VALID_TAG_TYPES.contains(tag.type())) {
+                        throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+                    }
+
+                    Journey journey = journeysById.get(tag.journeyId());
+                    if (journey == null || !journey.getAuthorId().equals(sellerId)
+                            || !isFreeTextTag(journey, tag.type())) {
+                        throw new CustomException(ErrorCode.INVALID_INPUT_VALUE);
+                    }
+
+                    return ResellSelectedTag.builder()
+                            .resellId(resellId)
+                            .journeyId(tag.journeyId())
+                            .tagType(tag.type())
+                            .build();
+                })
+                .toList();
+
+        resellSelectedTagRepository.saveAll(selected);
+    }
+
+    private boolean isFreeTextTag(Journey journey, String type) {
+        return switch (type) {
+            case "activity" -> TAG_SOURCE_FREE_TEXT.equals(journey.getActivitySource()) && journey.getActivityTag() != null;
+            case "situation" -> TAG_SOURCE_FREE_TEXT.equals(journey.getSituationSource()) && journey.getSituationTag() != null;
+            case "style" -> TAG_SOURCE_FREE_TEXT.equals(journey.getStyleSource()) && journey.getStyleTag() != null;
+            default -> false;
+        };
     }
 }

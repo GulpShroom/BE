@@ -4,6 +4,7 @@ import com.hufsglobalion.glupshroom.domain.transfer.entity.Transfer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 
 public record TransferCompleteResponse(
         @Schema(description = "소유권이 이전된 제품 ID", example = "1")
@@ -19,18 +20,42 @@ public record TransferCompleteResponse(
         String transferStatus,
 
         @Schema(description = "이전 완료 시각", example = "2026-08-10T11:15:00+09:00")
-        OffsetDateTime completedAt
+        OffsetDateTime completedAt,
+
+        @Schema(description = "판매자가 계승 시점에 선택 공개한 자유텍스트 태그 (구매 완료 후에만 채워짐)")
+        List<InheritedTag> inheritedTags
 ) {
 
     private static final ZoneOffset KST_OFFSET = ZoneOffset.ofHours(9);
 
-    public static TransferCompleteResponse of(Long productId, Integer newGeneration, boolean letterOpened, Transfer transfer) {
+    public static TransferCompleteResponse of(
+            Long productId,
+            Integer newGeneration,
+            boolean letterOpened,
+            List<InheritedTag> inheritedTags,
+            Transfer transfer
+    ) {
         return new TransferCompleteResponse(
                 productId,
                 newGeneration,
                 letterOpened,
                 transfer.getTransferStatus().getValue(),
-                transfer.getCompletedAt().atOffset(KST_OFFSET)
+                transfer.getCompletedAt().atOffset(KST_OFFSET),
+                inheritedTags
         );
     }
+
+    public record InheritedTag(
+            @Schema(description = "태그 종류", example = "style", allowableValues = {"activity", "situation", "style"})
+            String type,
+
+            @Schema(description = "태그 값", example = "빈티지룩")
+            String value,
+
+            @Schema(description = "해당 여정의 도시(맥락 표시용)", example = "도쿄")
+            String city,
+
+            @Schema(description = "해당 여정의 연도(맥락 표시용)", example = "2026")
+            Integer year
+    ) {}
 }

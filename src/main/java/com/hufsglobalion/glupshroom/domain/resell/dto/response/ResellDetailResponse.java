@@ -36,6 +36,7 @@ public record ResellDetailResponse(
             long countryCount,
             long cityCount,
             boolean hasLetter,
-            boolean hasCareTip
+            boolean hasCareTip,
+            boolean hasSelectedTags
     ) {}
 }

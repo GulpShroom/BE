@@ -8,7 +8,9 @@ import com.hufsglobalion.glupshroom.domain.ownership.repository.OwnershipHistory
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
 import com.hufsglobalion.glupshroom.domain.product.repository.ProductRepository;
 import com.hufsglobalion.glupshroom.domain.resell.entity.Resell;
+import com.hufsglobalion.glupshroom.domain.resell.entity.ResellSelectedTag;
 import com.hufsglobalion.glupshroom.domain.resell.repository.ResellRepository;
+import com.hufsglobalion.glupshroom.domain.resell.repository.ResellSelectedTagRepository;
 import com.hufsglobalion.glupshroom.domain.transfer.client.OpenAiLetterDraftClient;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.request.LetterCreateRequest;
 import com.hufsglobalion.glupshroom.domain.transfer.dto.response.LetterCreateResponse;
@@ -24,7 +26,9 @@ import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
@@ -43,6 +47,7 @@ public class TransferService {
     private final TransferRepository transferRepository;
     private final TransferLetterRepository transferLetterRepository;
     private final ResellRepository resellRepository;
+    private final ResellSelectedTagRepository resellSelectedTagRepository;
     private final ProductRepository productRepository;
     private final JourneyRepository journeyRepository;
     private final OwnershipHistoryRepository ownershipHistoryRepository;
@@ -184,11 +189,14 @@ public class TransferService {
             product.completeTransfer(newOwnerId);
             openNewOwnership(product.getId(), newOwnerId, product.getCurrentGeneration());
 
-            completeResellIfApplicable(transfer, newOwnerId);
+            Resell resell = completeResellIfApplicable(transfer, newOwnerId);
+            List<TransferCompleteResponse.InheritedTag> inheritedTags = buildInheritedTags(resell);
 
             transfer.complete();
 
-            return TransferCompleteResponse.of(product.getId(), product.getCurrentGeneration(), letterOpened, transfer);
+            return TransferCompleteResponse.of(
+                    product.getId(), product.getCurrentGeneration(), letterOpened, inheritedTags, transfer
+            );
         } catch (CustomException e) {
             throw e;
         } catch (Exception e) {
@@ -220,15 +228,57 @@ public class TransferService {
         current.close(LocalDate.now());
     }
 
-    private void completeResellIfApplicable(Transfer transfer, Long newOwnerId) {
+    private Resell completeResellIfApplicable(Transfer transfer, Long newOwnerId) {
         if (!TRANSFER_TYPE_RESELL.equals(transfer.getTransferType())) {
-            return;
+            return null;
         }
 
         Resell resell = resellRepository
                 .findByProductIdAndSellerIdAndPostStatus(transfer.getProductId(), transfer.getFromUserId(), "active")
                 .orElseThrow(() -> new CustomException(ErrorCode.TRANSFER_COMPLETION_FAILED));
         resell.completePurchase(newOwnerId);
+        return resell;
+    }
+
+    private List<TransferCompleteResponse.InheritedTag> buildInheritedTags(Resell resell) {
+        if (resell == null) {
+            return List.of();
+        }
+
+        List<ResellSelectedTag> selectedTags = resellSelectedTagRepository.findByResellId(resell.getId());
+        if (selectedTags.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Journey> journeysById = journeyRepository
+                .findAllById(selectedTags.stream().map(ResellSelectedTag::getJourneyId).distinct().toList())
+                .stream()
+                .collect(Collectors.toMap(Journey::getId, journey -> journey));
+
+        return selectedTags.stream()
+                .map(tag -> {
+                    Journey journey = journeysById.get(tag.getJourneyId());
+                    if (journey == null) {
+                        return null;
+                    }
+                    return new TransferCompleteResponse.InheritedTag(
+                            tag.getTagType(),
+                            tagValue(journey, tag.getTagType()),
+                            journey.getCity(),
+                            journey.getJourneyYear()
+                    );
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    private String tagValue(Journey journey, String type) {
+        return switch (type) {
+            case "activity" -> journey.getActivityTag();
+            case "situation" -> journey.getSituationTag();
+            case "style" -> journey.getStyleTag();
+            default -> null;
+        };
     }
 
     private void openNewOwnership(Long productId, Long newOwnerId, Integer newGeneration) {

@@ -9,5 +9,11 @@ public record ResellSaveRequest(
         String conditionGrade,
         Boolean letterShared,
         Boolean caretipShared,
-        List<String> photoUrls
-) {}
+        List<String> photoUrls,
+        List<SelectedTag> selectedTags
+) {
+    public record SelectedTag(
+            Long journeyId,
+            String type
+    ) {}
+}
