@@ -3,6 +3,7 @@ package com.hufsglobalion.glupshroom.domain.care.service;
 import com.hufsglobalion.glupshroom.domain.care.client.ConditionAnalysisResult;
 import com.hufsglobalion.glupshroom.domain.care.client.OpenAiConditionDiagnosisClient;
 import com.hufsglobalion.glupshroom.domain.care.client.PhotoPayload;
+import com.hufsglobalion.glupshroom.domain.care.dto.response.CareDiagnosisHistoryResponse;
 import com.hufsglobalion.glupshroom.domain.care.dto.response.CareDiagnosisResponse;
 import com.hufsglobalion.glupshroom.domain.care.entity.CareDiagnosis;
 import com.hufsglobalion.glupshroom.domain.care.repository.CareDiagnosisRepository;
@@ -76,6 +77,30 @@ public class CareDiagnosisService {
         } catch (DataAccessException e) {
             log.error("Care diagnosis save failed. productId={}", productId, e);
             throw new CustomException(ErrorCode.DIAGNOSIS_FAILED);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public CareDiagnosisHistoryResponse getDiagnosisHistory(Long productId) {
+        productService.getProduct(productId);
+
+        try {
+            List<CareDiagnosisHistoryResponse.DiagnosisSummary> diagnoses = careDiagnosisRepository
+                    .findByProductIdOrderByGenerationAsc(productId).stream()
+                    .map(diagnosis -> new CareDiagnosisHistoryResponse.DiagnosisSummary(
+                            diagnosis.getId(),
+                            diagnosis.getGeneration(),
+                            diagnosis.getDiagnosedAt(),
+                            diagnosis.getConditionGrade(),
+                            diagnosis.getResultText(),
+                            diagnosis.getSolutionText()
+                    ))
+                    .toList();
+
+            return new CareDiagnosisHistoryResponse(diagnoses);
+        } catch (DataAccessException e) {
+            log.error("Care diagnosis history retrieval failed. productId={}", productId, e);
+            throw new CustomException(ErrorCode.DIAGNOSIS_HISTORY_RETRIEVAL_FAILED);
         }
     }
 

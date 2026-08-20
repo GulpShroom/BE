@@ -1,5 +1,6 @@
 package com.hufsglobalion.glupshroom.domain.care.controller;
 
+import com.hufsglobalion.glupshroom.domain.care.dto.response.CareDiagnosisHistoryResponse;
 import com.hufsglobalion.glupshroom.domain.care.dto.response.CareDiagnosisResponse;
 import com.hufsglobalion.glupshroom.domain.care.service.CareDiagnosisService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -9,6 +10,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,5 +37,12 @@ public class CareDiagnosisController {
     ) {
         CareDiagnosisResponse response = careDiagnosisService.diagnose(productId, userId, photos);
         return ApiResponse.of("S201", "상태 진단이 완료되었습니다", response);
+    }
+
+    @Operation(summary = "AI 상태 진단 이력 조회", description = "제품의 세대별 AI 상태 진단 이력을 조회합니다.")
+    @GetMapping("/{productId}/diagnosis")
+    public ApiResponse<CareDiagnosisHistoryResponse> getDiagnosisHistory(@PathVariable Long productId) {
+        CareDiagnosisHistoryResponse response = careDiagnosisService.getDiagnosisHistory(productId);
+        return ApiResponse.success("케어 진단 이력을 조회했습니다", response);
     }
 }

@@ -82,7 +82,9 @@ public enum ErrorCode {
 
     RECALL_INVALID_TONE(HttpStatus.BAD_REQUEST, "E400", "유효하지 않은 톤 값입니다"),
     RECALL_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 여정의 작성자가 아닙니다"),
-    RECALL_REGENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "회고 재생성 중 오류가 발생했습니다");
+    RECALL_REGENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "회고 재생성 중 오류가 발생했습니다"),
+
+    DIAGNOSIS_HISTORY_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "케어 진단 이력 조회 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;
