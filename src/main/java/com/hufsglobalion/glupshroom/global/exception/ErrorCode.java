@@ -72,7 +72,10 @@ public enum ErrorCode {
     JOURNEY_ANALYSIS_IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "이미지 파일이 필요합니다"),
     JOURNEY_ANALYSIS_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 제품의 소유자가 아닙니다"),
     JOURNEY_ANALYSIS_FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "E413", "파일 용량이 제한을 초과했습니다"),
-    JOURNEY_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "AI 분석 중 오류가 발생했습니다");
+    JOURNEY_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "AI 분석 중 오류가 발생했습니다"),
+
+    DIAGNOSIS_PHOTO_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "진단할 사진이 필요합니다"),
+    DIAGNOSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "상태 진단 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;
