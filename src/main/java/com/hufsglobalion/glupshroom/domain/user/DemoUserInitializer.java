@@ -20,7 +20,7 @@ public class DemoUserInitializer implements CommandLineRunner {
     }
 
     private void createIfAbsent(ProfileType profileType, String nickname) {
-        userRepository.findByProfileType(profileType).orElseGet(() ->
+        userRepository.findFirstByProfileTypeOrderByIdDesc(profileType).orElseGet(() ->
                 userRepository.save(User.builder()
                         .profileType(profileType)
                         .nickname(nickname)

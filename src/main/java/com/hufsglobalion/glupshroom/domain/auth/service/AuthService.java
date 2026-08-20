@@ -19,7 +19,7 @@ public class AuthService {
 
     public ProfileSelectResponse selectProfile(String profileTypeValue) {
         ProfileType profileType = ProfileType.from(profileTypeValue);
-        User user = userRepository.findByProfileType(profileType)
+        User user = userRepository.findFirstByProfileTypeOrderByIdDesc(profileType)
                 .orElseThrow(() -> new CustomException(ErrorCode.PROFILE_SELECTION_FAILED));
         return ProfileSelectResponse.from(user);
     }

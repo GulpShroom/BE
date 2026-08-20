@@ -27,7 +27,7 @@ public class User {
     private String nickname;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private ProfileType profileType;
 
     @Builder
