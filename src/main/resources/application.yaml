@@ -6,7 +6,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 10MB
+      max-request-size: 30MB
   datasource:
     url: jdbc:postgresql://localhost:5433/glupshroom
     driver-class-name: org.postgresql.Driver
@@ -31,3 +31,5 @@ app:
   upload:
     dir: ${UPLOAD_DIR:./uploads}
     base-url: ${UPLOAD_BASE_URL:http://localhost:8080/uploads}
+  repair:
+    link-url: ${REPAIR_LINK_URL:https://mcm.com/repair}
