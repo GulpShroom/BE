@@ -88,6 +88,10 @@ public class Product {
         this.currentGeneration = this.currentGeneration + 1;
     }
 
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     @Builder
     private Product(String passportId, String serialNo, String officialName, String nickname,
                     String officialImageUrl, Integer manufactureYear, String productLine, String color,

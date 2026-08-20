@@ -7,6 +7,7 @@ import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipHistory;
 import com.hufsglobalion.glupshroom.domain.ownership.entity.OwnershipStatus;
 import com.hufsglobalion.glupshroom.domain.ownership.service.OwnershipService;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductListStatus;
+import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductNicknameUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrationRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetterResponse;
@@ -16,6 +17,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListRes
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.InheritanceLetterPreview;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse.ProductItem;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductNicknameUpdateResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductRegistrationResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse.Generation;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
@@ -223,6 +225,24 @@ public class ProductService {
                 getProvenanceStatus(product.getProvenanceScore(), journeyCount),
                 Math.toIntExact(ownershipService.countKeepers(productId))
         );
+    }
+
+    @Transactional
+    public ProductNicknameUpdateResponse updateNickname(Long productId, ProductNicknameUpdateRequest request) {
+        if (request.nickname() == null || request.nickname().isBlank()) {
+            throw new CustomException(ErrorCode.PRODUCT_NICKNAME_REQUIRED);
+        }
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CustomException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        if (!product.getCurrentOwnerId().equals(request.userId())) {
+            throw new CustomException(ErrorCode.PRODUCT_NICKNAME_UPDATE_FORBIDDEN);
+        }
+
+        product.updateNickname(request.nickname().trim());
+
+        return new ProductNicknameUpdateResponse(product.getId(), product.getNickname());
     }
 
     public ProductScanResponse scanProduct(ProductScanRequest request) {

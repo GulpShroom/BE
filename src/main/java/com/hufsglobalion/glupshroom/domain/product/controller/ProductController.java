@@ -1,5 +1,6 @@
 package com.hufsglobalion.glupshroom.domain.product.controller;
 
+import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductNicknameUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductScanRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.request.ProductRegistrationRequest;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.MyProductListResponse;
@@ -7,6 +8,7 @@ import com.hufsglobalion.glupshroom.domain.product.dto.response.GenerationLetter
 import com.hufsglobalion.glupshroom.domain.product.dto.response.DigitalPassportResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.JourneyMapResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductLineageResponse;
+import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductNicknameUpdateResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductScanResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductSummaryResponse;
 import com.hufsglobalion.glupshroom.domain.product.dto.response.ProductRegistrationResponse;
@@ -17,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,6 +68,16 @@ public class ProductController {
     public ApiResponse<ProductSummaryResponse> getProductSummary(@PathVariable Long productId) {
         ProductSummaryResponse response = productService.getProductSummary(productId);
         return ApiResponse.success("제품 요약 정보를 조회했습니다", response);
+    }
+
+    @Operation(summary = "제품 별칭 수정", description = "제품의 현재 소유자가 별칭을 새로 설정합니다.")
+    @PatchMapping("/products/{productId}/nickname")
+    public ApiResponse<ProductNicknameUpdateResponse> updateNickname(
+            @PathVariable Long productId,
+            @RequestBody ProductNicknameUpdateRequest request
+    ) {
+        ProductNicknameUpdateResponse response = productService.updateNickname(productId, request);
+        return ApiResponse.success("별칭이 수정되었습니다", response);
     }
 
     @Operation(summary = "제품 스캔·정품 확인", description = "시리얼 넘버 또는 QR 코드로 제품 정품 여부를 확인합니다.")

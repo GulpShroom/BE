@@ -86,7 +86,10 @@ public enum ErrorCode {
 
     DIAGNOSIS_HISTORY_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "케어 진단 이력 조회 중 오류가 발생했습니다"),
 
-    CARE_TIP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "케어 팁 조회 중 오류가 발생했습니다");
+    CARE_TIP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "케어 팁 조회 중 오류가 발생했습니다"),
+
+    PRODUCT_NICKNAME_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 제품의 현재 소유자만 별칭을 수정할 수 있습니다"),
+    PRODUCT_NICKNAME_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "별칭을 입력해주세요");
 
     private final HttpStatus status;
     private final String code;
