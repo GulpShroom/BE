@@ -2,6 +2,7 @@ package com.hufsglobalion.glupshroom.domain.care.service;
 
 import com.hufsglobalion.glupshroom.domain.care.dto.request.CareTipCreateRequest;
 import com.hufsglobalion.glupshroom.domain.care.dto.response.CareTipCreateResponse;
+import com.hufsglobalion.glupshroom.domain.care.dto.response.CareTipListResponse;
 import com.hufsglobalion.glupshroom.domain.care.entity.CareTip;
 import com.hufsglobalion.glupshroom.domain.care.repository.CareTipRepository;
 import com.hufsglobalion.glupshroom.domain.product.entity.Product;
@@ -11,6 +12,7 @@ import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -63,6 +65,27 @@ public class CareTipService {
         } catch (DataAccessException e) {
             log.error("Care tip creation failed. productId={}", productId, e);
             throw new CustomException(ErrorCode.CARE_TIP_SAVE_FAILED);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public CareTipListResponse getCareTips(Long productId) {
+        Product product = productService.getProduct(productId);
+
+        try {
+            List<CareTipListResponse.CareTipSummary> careTips = careTipRepository
+                    .findVisibleCareTips(productId, product.getCurrentGeneration()).stream()
+                    .map(careTip -> new CareTipListResponse.CareTipSummary(
+                            careTip.getId(),
+                            careTip.getGeneration(),
+                            careTip.getContent()
+                    ))
+                    .toList();
+
+            return new CareTipListResponse(careTips);
+        } catch (DataAccessException e) {
+            log.error("Care tip retrieval failed. productId={}", productId, e);
+            throw new CustomException(ErrorCode.CARE_TIP_RETRIEVAL_FAILED);
         }
     }
 
