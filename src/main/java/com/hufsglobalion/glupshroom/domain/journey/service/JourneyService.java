@@ -1,5 +1,6 @@
 package com.hufsglobalion.glupshroom.domain.journey.service;
 
+import com.hufsglobalion.glupshroom.domain.journey.client.OpenAiRecallClient;
 import com.hufsglobalion.glupshroom.domain.journey.client.OpenAiVisionClient;
 import com.hufsglobalion.glupshroom.domain.journey.client.VisionAnalysisResult;
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
@@ -7,6 +8,7 @@ import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyAnalyzeRe
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.RecallRegenerateResponse;
 import com.hufsglobalion.glupshroom.domain.journey.entity.Journey;
 import com.hufsglobalion.glupshroom.domain.journey.repository.JourneyRepository;
 import com.hufsglobalion.glupshroom.domain.journey.util.Coordinates;
@@ -50,6 +52,7 @@ public class JourneyService {
     private final PhotoMetadataExtractor photoMetadataExtractor;
     private final OwnershipHistoryRepository ownershipHistoryRepository;
     private final OpenAiVisionClient openAiVisionClient;
+    private final OpenAiRecallClient openAiRecallClient;
 
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
@@ -179,6 +182,58 @@ public class JourneyService {
                 verifyStatus,
                 verifyConfidence
         );
+    }
+
+    @Transactional
+    public RecallRegenerateResponse regenerateRecall(Long journeyId, Long userId, String tone) {
+        if (!VALID_RECALL_TONES.contains(tone)) {
+            throw new CustomException(ErrorCode.RECALL_INVALID_TONE);
+        }
+
+        Journey journey = journeyRepository.findById(journeyId)
+                .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_NOT_FOUND));
+
+        if (!journey.getAuthorId().equals(userId)) {
+            throw new CustomException(ErrorCode.RECALL_FORBIDDEN);
+        }
+
+        String recallText = openAiRecallClient.regenerate(buildRecallSummary(journey), tone);
+
+        journey.updateDetails(
+                null, null, null, null,
+                null, null,
+                null, null,
+                null, null,
+                recallText, tone, null
+        );
+
+        return new RecallRegenerateResponse(recallText, tone);
+    }
+
+    private String buildRecallSummary(Journey journey) {
+        StringBuilder summary = new StringBuilder();
+        if (journey.getJourneyYear() != null) {
+            summary.append(journey.getJourneyYear()).append("년 ");
+        }
+        if (journey.getJourneyMonth() != null) {
+            summary.append(journey.getJourneyMonth()).append("월, ");
+        }
+        if (journey.getCountry() != null) {
+            summary.append(journey.getCountry());
+        }
+        if (journey.getCity() != null) {
+            summary.append(" ").append(journey.getCity());
+        }
+        if (journey.getActivityTag() != null) {
+            summary.append(" / 활동: ").append(journey.getActivityTag());
+        }
+        if (journey.getSituationTag() != null) {
+            summary.append(" / 상황: ").append(journey.getSituationTag());
+        }
+        if (journey.getStyleTag() != null) {
+            summary.append(" / 스타일: ").append(journey.getStyleTag());
+        }
+        return summary.toString();
     }
 
     @Transactional(readOnly = true)
