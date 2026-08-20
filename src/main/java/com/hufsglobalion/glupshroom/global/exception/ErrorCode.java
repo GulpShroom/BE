@@ -78,7 +78,11 @@ public enum ErrorCode {
     DIAGNOSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "상태 진단 중 오류가 발생했습니다"),
 
     RESELL_INHERIT_PREVIEW_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 리셀글의 작성자가 아닙니다"),
-    RESELL_INHERIT_PREVIEW_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "미리보기 조회 중 오류가 발생했습니다");
+    RESELL_INHERIT_PREVIEW_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "미리보기 조회 중 오류가 발생했습니다"),
+
+    RECALL_INVALID_TONE(HttpStatus.BAD_REQUEST, "E400", "유효하지 않은 톤 값입니다"),
+    RECALL_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 여정의 작성자가 아닙니다"),
+    RECALL_REGENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "회고 재생성 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;

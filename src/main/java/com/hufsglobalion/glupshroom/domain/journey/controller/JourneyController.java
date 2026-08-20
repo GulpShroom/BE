@@ -1,11 +1,13 @@
 package com.hufsglobalion.glupshroom.domain.journey.controller;
 
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.request.RecallRegenerateRequest;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyAnalyzeResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.OnThisDayResponse;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.RecallRegenerateResponse;
 import com.hufsglobalion.glupshroom.domain.journey.service.JourneyService;
 import com.hufsglobalion.glupshroom.domain.journey.service.OnThisDayService;
 import com.hufsglobalion.glupshroom.global.common.ApiResponse;
@@ -103,5 +105,15 @@ public class JourneyController {
     ) {
         journeyService.deleteJourney(journeyId, userId);
         return ApiResponse.success("여정 삭제에 성공했습니다", null);
+    }
+
+    @Operation(summary = "회고 문장 재생성", description = "저장된 여정의 태그를 재료로 AI가 회고 문장을 다시 생성해 반영합니다.")
+    @PostMapping("/journeys/{journeyId}/recall")
+    public ApiResponse<RecallRegenerateResponse> regenerateRecall(
+            @PathVariable Long journeyId,
+            @RequestBody @Valid RecallRegenerateRequest request
+    ) {
+        RecallRegenerateResponse response = journeyService.regenerateRecall(journeyId, request.userId(), request.tone());
+        return ApiResponse.success("회고 문장이 재생성되었습니다", response);
     }
 }
