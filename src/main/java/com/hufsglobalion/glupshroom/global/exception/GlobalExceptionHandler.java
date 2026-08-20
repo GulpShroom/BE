@@ -29,6 +29,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.error(errorCode));
     }
 
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodArgumentTypeMismatchException(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException e
+    ) {
+        ErrorCode errorCode = ErrorCode.INVALID_FORMAT;
+        return ResponseEntity.status(errorCode.getStatus()).body(ApiResponse.error(errorCode));
+    }
+
     @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceededException(
             org.springframework.web.multipart.MaxUploadSizeExceededException e
