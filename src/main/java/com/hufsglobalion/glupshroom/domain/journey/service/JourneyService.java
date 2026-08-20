@@ -1,6 +1,9 @@
 package com.hufsglobalion.glupshroom.domain.journey.service;
 
+import com.hufsglobalion.glupshroom.domain.journey.client.OpenAiVisionClient;
+import com.hufsglobalion.glupshroom.domain.journey.client.VisionAnalysisResult;
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyAnalyzeResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
@@ -17,8 +20,10 @@ import com.hufsglobalion.glupshroom.global.exception.CustomException;
 import com.hufsglobalion.glupshroom.global.exception.ErrorCode;
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneyUpdateRequest;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyUpdateResponse;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +31,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
@@ -35,10 +41,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JourneyService {
 
+    private static final Set<String> ALLOWED_IMAGE_CONTENT_TYPES = Set.of("image/jpeg", "image/png");
+    private static final Set<String> VALID_RECALL_TONES = Set.of("emotional", "plain", "lively");
+    private static final String DEFAULT_RECALL_TONE = "emotional";
+
     private final JourneyRepository journeyRepository;
     private final ProductRepository productRepository;
     private final PhotoMetadataExtractor photoMetadataExtractor;
     private final OwnershipHistoryRepository ownershipHistoryRepository;
+    private final OpenAiVisionClient openAiVisionClient;
 
     public JourneySaveResponse saveJourney(JourneySaveRequest request) {
         PhotoMetadata metadata = photoMetadataExtractor.extract(request.photoUrl());
@@ -88,7 +99,7 @@ public class JourneyService {
         String verifyStatus = hasExif ? "VERIFIED" : "UNVERIFIED";
         Integer verifyConfidence = hasExif ? 1 : 0;
 
-        Coordinates coordinates = resolveCoordinates(city, country);
+        Coordinates coordinates = photoMetadataExtractor.resolveCoordinates(city, country);
 
         JourneySaveRequest.Tags tags = request.tags();
         JourneySaveRequest.TagSources tagSources = request.tagSources();
@@ -124,20 +135,50 @@ public class JourneyService {
         return new JourneySaveResponse(saved.getId());
     }
 
-    private Coordinates resolveCoordinates(String city, String country) {
-        if (city != null) {
-            return photoMetadataExtractor.geocode(buildGeocodeQuery(city, country))
-                    .orElse(Coordinates.EMPTY);
+    public JourneyAnalyzeResponse analyzeJourney(Long productId, Long userId, String tone, MultipartFile photo) {
+        if (photo == null || photo.isEmpty() || !ALLOWED_IMAGE_CONTENT_TYPES.contains(photo.getContentType())) {
+            throw new CustomException(ErrorCode.JOURNEY_ANALYSIS_IMAGE_REQUIRED);
         }
-        if (country != null) {
-            return photoMetadataExtractor.geocode(country)
-                    .orElse(Coordinates.EMPTY);
-        }
-        return Coordinates.EMPTY;
-    }
 
-    private String buildGeocodeQuery(String city, String country) {
-        return country != null ? city + ", " + country : city;
+        productRepository.findById(productId)
+                .filter(product -> product.getCurrentOwnerId().equals(userId))
+                .orElseThrow(() -> new CustomException(ErrorCode.JOURNEY_ANALYSIS_FORBIDDEN));
+
+        String resolvedTone = VALID_RECALL_TONES.contains(tone) ? tone : DEFAULT_RECALL_TONE;
+
+        byte[] photoBytes;
+        try {
+            photoBytes = photo.getBytes();
+        } catch (IOException e) {
+            throw new CustomException(ErrorCode.JOURNEY_ANALYSIS_FAILED);
+        }
+
+        PhotoMetadata metadata = photoMetadataExtractor.extractFromBytes(photoBytes);
+        Coordinates coordinates = photoMetadataExtractor.resolveCoordinates(metadata.city(), metadata.country());
+
+        boolean hasExif = metadata.year() != null;
+        String verifyStatus = hasExif ? "verified" : "unverified";
+        Integer verifyConfidence = hasExif ? 96 : null;
+
+        VisionAnalysisResult vision = openAiVisionClient.analyze(photoBytes, photo.getContentType(), resolvedTone);
+
+        return new JourneyAnalyzeResponse(
+                metadata.country(),
+                metadata.city(),
+                coordinates.latitude() == null ? null : coordinates.latitude().doubleValue(),
+                coordinates.longitude() == null ? null : coordinates.longitude().doubleValue(),
+                metadata.year(),
+                metadata.month(),
+                metadata.season(),
+                metadata.takenAt(),
+                vision.activityTag(),
+                vision.situationTag(),
+                vision.styleTag(),
+                vision.recallText(),
+                resolvedTone,
+                verifyStatus,
+                verifyConfidence
+        );
     }
 
     @Transactional(readOnly = true)

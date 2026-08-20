@@ -1,6 +1,7 @@
 package com.hufsglobalion.glupshroom.domain.journey.controller;
 
 import com.hufsglobalion.glupshroom.domain.journey.dto.request.JourneySaveRequest;
+import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyAnalyzeResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyDetailResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneyListResponse;
 import com.hufsglobalion.glupshroom.domain.journey.dto.response.JourneySaveResponse;
@@ -15,7 +16,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "Journey", description = "여정 저장/조회 관련 API")
 @RestController
@@ -32,6 +35,18 @@ public class JourneyController {
     public ApiResponse<JourneySaveResponse> saveJourney(@RequestBody @Valid JourneySaveRequest request) {
         JourneySaveResponse response = journeyService.saveJourney(request);
         return ApiResponse.of("S201", "여정 저장에 성공했습니다", response);
+    }
+
+    @Operation(summary = "AI 여정 큐레이터", description = "업로드한 사진을 분석해 여정 태그와 회고 문장 초안을 생성합니다. 저장은 하지 않습니다.")
+    @PostMapping(value = "/journeys/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<JourneyAnalyzeResponse> analyzeJourney(
+            @RequestParam(value = "photo", required = false) MultipartFile photo,
+            @RequestParam Long productId,
+            @RequestParam Long userId,
+            @RequestParam(defaultValue = "emotional") String tone
+    ) {
+        JourneyAnalyzeResponse response = journeyService.analyzeJourney(productId, userId, tone, photo);
+        return ApiResponse.success("AI 분석이 완료되었습니다", response);
     }
 
     @Operation(summary = "여정 상세 조회", description = "여정 1건의 상세 정보를 조회합니다. 본인이 작성한 여정인지 여부(isAuthor)와 전체 필드를 반환합니다.")

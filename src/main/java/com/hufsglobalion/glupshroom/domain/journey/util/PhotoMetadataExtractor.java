@@ -12,6 +12,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -42,6 +43,24 @@ public class PhotoMetadataExtractor {
     }
 
     public PhotoMetadata extract(String photoUrl) {
+        try (InputStream inputStream = URI.create(photoUrl).toURL().openStream()) {
+            return extractFromStream(inputStream);
+        } catch (IOException e) {
+            log.warn("사진 다운로드 실패: {}", e.getMessage());
+            return new PhotoMetadata(null, null, null, null, null, null);
+        }
+    }
+
+    public PhotoMetadata extractFromBytes(byte[] photoBytes) {
+        try (InputStream inputStream = new ByteArrayInputStream(photoBytes)) {
+            return extractFromStream(inputStream);
+        } catch (IOException e) {
+            log.warn("사진 메타데이터 처리 실패: {}", e.getMessage());
+            return new PhotoMetadata(null, null, null, null, null, null);
+        }
+    }
+
+    private PhotoMetadata extractFromStream(InputStream inputStream) {
         Integer year = null;
         Integer month = null;
         String season = null;
@@ -49,7 +68,7 @@ public class PhotoMetadataExtractor {
         String city = null;
         LocalDateTime takenAt = null;
 
-        try (InputStream inputStream = URI.create(photoUrl).toURL().openStream()) {
+        try {
             Metadata metadata = ImageMetadataReader.readMetadata(inputStream);
 
             ExifSubIFDDirectory dateDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
@@ -79,6 +98,21 @@ public class PhotoMetadataExtractor {
 
         return new PhotoMetadata(year, month, season, country, city, takenAt);
     }
+
+    public Coordinates resolveCoordinates(String city, String country) {
+        if (city != null) {
+            return geocode(buildGeocodeQuery(city, country)).orElse(Coordinates.EMPTY);
+        }
+        if (country != null) {
+            return geocode(country).orElse(Coordinates.EMPTY);
+        }
+        return Coordinates.EMPTY;
+    }
+
+    private String buildGeocodeQuery(String city, String country) {
+        return country != null ? city + ", " + country : city;
+    }
+
     private String toSeason(int month) {
         return switch (month) {
             case 3, 4, 5 -> "spring";
