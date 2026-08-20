@@ -65,7 +65,12 @@ public enum ErrorCode {
     TRANSFER_COMPLETION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "이전 완료 중 오류가 발생했습니다(롤백됨)"),
     LETTER_ALREADY_WRITTEN(HttpStatus.CONFLICT, "E409", "이미 작성된 편지가 있습니다"),
 
-    JOURNEY_MAP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "지도 조회 중 오류가 발생했습니다");
+    JOURNEY_MAP_RETRIEVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "지도 조회 중 오류가 발생했습니다"),
+
+    JOURNEY_ANALYSIS_IMAGE_REQUIRED(HttpStatus.BAD_REQUEST, "E400", "이미지 파일이 필요합니다"),
+    JOURNEY_ANALYSIS_FORBIDDEN(HttpStatus.FORBIDDEN, "E403", "해당 제품의 소유자가 아닙니다"),
+    JOURNEY_ANALYSIS_FILE_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "E413", "파일 용량이 제한을 초과했습니다"),
+    JOURNEY_ANALYSIS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "E500", "AI 분석 중 오류가 발생했습니다");
 
     private final HttpStatus status;
     private final String code;
